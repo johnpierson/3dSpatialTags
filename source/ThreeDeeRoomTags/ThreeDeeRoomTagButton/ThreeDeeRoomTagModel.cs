@@ -144,7 +144,7 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
 
                 foreach (var spatialElement in spatialElements)
                 {
-                    //skip unplaced rooms TODO: Revert to room/space tags
+                    //skip unplaced rooms
                     //if(spatialElement.Area <= 0) continue;
                     
                     var spatialElementLocation = spatialElement.Location as LocationPoint;

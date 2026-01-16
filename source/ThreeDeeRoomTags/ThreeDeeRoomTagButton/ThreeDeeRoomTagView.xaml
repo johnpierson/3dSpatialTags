@@ -122,7 +122,7 @@
                         <Border.RenderTransform>
                             <RotateTransform x:Name="transform" CenterX="100"/>
                         </Border.RenderTransform>
-                        <TextBlock Text="{Binding FlyOutText, NotifyOnTargetUpdated=True, FallbackValue=Test}" IsHitTestVisible="True" TextWrapping="Wrap">
+                        <TextBlock Text="{Binding FlyOutText, NotifyOnTargetUpdated=True, FallbackValue=''}" IsHitTestVisible="True" TextWrapping="Wrap">
                             <TextBlock.Triggers>
                                 <EventTrigger RoutedEvent="Binding.TargetUpdated">
                                     <BeginStoryboard Storyboard="{StaticResource WiggleStoryboard}"/>
@@ -133,12 +133,12 @@
                             </TextBlock.Triggers>
                         </TextBlock>
                     </Border>
-
+ 
                     <Border Grid.Column="1" Grid.Row="11">
                         <Border.RenderTransform>
                             <RotateTransform x:Name="transform2" CenterX="100"/>
                         </Border.RenderTransform>
-                        <TextBlock Foreground="Red" Text="{Binding UnboundedFlyOutText, NotifyOnTargetUpdated=True, FallbackValue=Test}" IsHitTestVisible="True" TextWrapping="Wrap">
+                        <TextBlock Foreground="Red" Text="{Binding UnboundedFlyOutText, NotifyOnTargetUpdated=True, FallbackValue=''}" IsHitTestVisible="True" TextWrapping="Wrap">
                             <TextBlock.Triggers>
                                 <EventTrigger RoutedEvent="Binding.TargetUpdated">
                                     <BeginStoryboard Storyboard="{StaticResource WiggleStoryboard}"/>
