@@ -1,28 +1,39 @@
-BSD 3-Clause License
+PolyForm Noncommercial License 1.0.0
 
-Copyright (c) 2026, john pierson
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
+## Acceptance
 
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
+In order to get any license under these terms, you must agree to them as each and every one of them applies to you. Once you use the software in any way, you may not otherwise publicly challenge these terms, nor may you say that you did not agree to them. If you do not agree to these terms, do not use the software.
 
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
+## Copyright License
 
-3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+The licensor grants you a non-exclusive, royalty-free, worldwide, non-sublicensable license to use, reproduce, prepare derivative works of, and distribute the software for noncommercial purposes.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+## Noncommercial Purpose
+
+A noncommercial purpose is one that is not primarily intended for or directed towards commercial advantage or monetary compensation.
+
+## Patent License
+
+The licensor grants you a non-exclusive, royalty-free, worldwide, non-sublicensable license to make, have made, use, sell, offer for sale, import, and otherwise transfer the software, as long as you do so only for noncommercial purposes. This license only applies to the patent claims of the licensor that the licensor has the right to license and that are inevitably infringed by the software as the licensor released it.
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of this software from you also gets a copy of these terms or the URL for them.
+
+## No Other Rights
+
+These terms do not imply any other licenses or rights in any patents, trademarks, or copyrights of the licensor.
+
+## Termination
+
+If you use the software in a way that is not permitted by these terms, your license is automatically terminated. If the licensor notifies you in writing that you have not complied with these terms, your license is also automatically terminated.
+
+## Responsibilities
+
+You are responsible for any consequences of your use of the software.
+
+## No Warranty
+
+THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND. THE LICENSOR IS NOT RESPONSIBLE FOR ANY DAMAGES OR OTHER LIABILITY TO YOU OR OTHERS THAT MAY ARISE FROM THESE TERMS OR YOUR USE OF THE SOFTWARE.
