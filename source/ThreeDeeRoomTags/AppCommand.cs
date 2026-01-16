@@ -4,7 +4,6 @@ using Autodesk.Revit.UI;
 using Serilog;
 using Serilog.Events;
 using ThreeDeeRoomTags.Classes;
-using ThreeDeeRoomTags.Licensing;
 
 namespace ThreeDeeRoomTags
 {

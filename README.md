@@ -1,6 +1,6 @@
 # ThreeDeeRoomTags
 
-Autodesk Revit plugin project organised into multiple solution files that target versions 2020 - 2025.
+Autodesk Revit plugin project organised into multiple solution files that target versions 2020 - 2026.
 
 ### Technologies Used
 
@@ -24,15 +24,15 @@ We recommend JetBrains Rider as preferred IDE, since it has outstanding .NET sup
 from [here](https://www.jetbrains.com/rider/).
 
 1. Open JetBrains Rider
-2. Click on `File -> Open` and choose the RevitLookup.sln file to open.
-3. In the `Solutions Configuration` drop-down menu, select `Release R25` or `Debug R25`. Suffix `R25` means compiling for the Revit 2025.
+2. Click on `File -> Open` and choose the ThreeDeeRoomTags.sln file to open.
+3. In the `Solutions Configuration` drop-down menu, select `Release R26` or `Debug R26`. Suffix `R26` means compiling for the Revit 2026.
 4. After the solution loads, you can build it by clicking on `Build -> Build Solution`.
 
 Also, you can use Visual Studio. If you don't have Visual Studio installed, download it from [here](https://visualstudio.microsoft.com/downloads/).
 
 1. Open Visual Studio
 2. Click on `File -> Open -> Project/Solution` and locate your solution file to open.
-3. In the `Solutions Configuration` drop-down menu, select `Release R25` or `Debug R25`. Suffix `R25` means compiling for the Revit 2025.
+3. In the `Solutions Configuration` drop-down menu, select `Release R26` or `Debug R26`. Suffix `R26` means compiling for the Revit 2026.
 4. After the solution loads, you can build it by clicking on `Build -> Build Solution`.
 
 ### MSI installer and bundle build on the local machine
