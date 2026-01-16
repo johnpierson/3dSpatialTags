@@ -7,6 +7,9 @@ assignees: ''
 
 ---
 
+> [!IMPORTANT]
+> This is an open-source project. While we welcome reports and suggestions, there is **no guarantee** that issues will be fixed or feature requests will be implemented. This project is maintained on a best-effort basis.
+
 **Is your feature request related to a problem? Please describe.**
 A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
 
