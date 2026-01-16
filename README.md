@@ -101,6 +101,10 @@ To execute your NUKE build on GitHub, you can follow these steps:
 | Resources  | Images, sounds, localisation files, etc.                                                                                                                                                             |
 | Utils      | Utilities, extensions, helpers used across the application                                                                                                                                           |
 
+### Disclaimer
+
+This software is provided "as is," without warranty of any kind, express or implied. Use it at your own risk.
+
 ### Learn More
 
 * You can explore more in the [RevitTemplates wiki](https://github.com/Nice3point/RevitTemplates/wiki) page.
