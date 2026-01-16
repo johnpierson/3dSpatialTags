@@ -243,8 +243,12 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
 
         private void OnHelp(Window win)
         {
-            string url = "https://www.parallaxteam.com/MADE-RevitPlugins";
-            System.Diagnostics.Process.Start(url);
+            string url = "https://github.com/johnpierson/3dSpatialTags/blob/main/LICENSE";
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
         }
     }
 }
