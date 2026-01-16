@@ -1,110 +1,93 @@
-# ThreeDeeRoomTags
+# 3D Spatial Tags for Revit
 
-Autodesk Revit plugin project organised into multiple solution files that target versions 2020 - 2026.
+⚠️ **USE AT YOUR OWN RISK.** This software is provided "as is," without warranty of any kind, express or implied. The developer is not responsible for any data loss or issues caused by the use of this plugin.
+
+[![Revit 2020](https://img.shields.io/badge/Revit-2020-blue.svg)](https://www.autodesk.com/products/revit/overview)
+[![Revit 2021](https://img.shields.io/badge/Revit-2021-blue.svg)](https://www.autodesk.com/products/revit/overview)
+[![Revit 2022](https://img.shields.io/badge/Revit-2022-blue.svg)](https://www.autodesk.com/products/revit/overview)
+[![Revit 2023](https://img.shields.io/badge/Revit-2023-blue.svg)](https://www.autodesk.com/products/revit/overview)
+[![Revit 2024](https://img.shields.io/badge/Revit-2024-blue.svg)](https://www.autodesk.com/products/revit/overview)
+[![Revit 2025](https://img.shields.io/badge/Revit-2025-blue.svg)](https://www.autodesk.com/products/revit/overview)
+[![Revit 2026](https://img.shields.io/badge/Revit-2026-blue.svg)](https://www.autodesk.com/products/revit/overview)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+3D Spatial Tags is a Revit add-on that enables the generation of 3D geometry tags for Rooms and Spaces. Since Revit's native tags only exist in 2D views, this tool allows you to visualize room information (Name and Number) directly within 3D views, walkthroughs, and coordination models.
+
+## Key Features
+
+- **3D Room & Space Tags**: Generate 3D model text/geometry based on your room or space parameters.
+- **Link Support**: Extract and tag spatial elements from linked Revit models.
+- **Phase Awareness**: Filter spatial elements by specific project phases.
+- **Dynamic Updates**: Automatically update previously created tags to reflect changes in room names, numbers, or locations.
+- **Configurable Text Height**: Adjust the size of the generated 3D tags directly from the UI.
+- **Multi-Version Support**: Fully compatible with Autodesk Revit 2020 through 2026.
+
+## How it Works
+
+1. Open the **3D Spatial Tags** panel in your Revit Ribbon.
+2. Select your **Target** (Rooms or Spaces).
+3. If necessary, enable **From Link** and select the desired Revit Link.
+4. Choose the **Phase** you want to process.
+5. Choose your preferred **Tag Family**.
+6. Click **Create/Update Tags**.
+
+---
+
+<details>
+<summary><b>🛠 Technical Details & Build Instructions</b></summary>
 
 ### Technologies Used
 
 * C# 12
-* .NET Framework 4.8
-* .NET 8
+* .NET Framework 4.8 (for Revit 2020-2024)
+* .NET 8 (for Revit 2025-2026)
+* WPF / MVVM
+* [NUKE Build System](https://nuke.build/)
 
 ### Getting Started
 
-Before you can build this project, you will need to install .NET, depending upon the solution file you are building. If you haven't already installed these
-frameworks, you can do so by visiting the following:
-
+Before building, ensure you have the required frameworks installed:
 * [.NET Framework 4.8](https://dotnet.microsoft.com/download/dotnet-framework/net48)
 * [.NET 8](https://dotnet.microsoft.com/en-us/download/dotnet)
 
-After installing the necessary frameworks, clone this repository to your local machine and navigate to the project directory.
+### Building the Project
 
-### Building
+We recommend using **JetBrains Rider** or **Visual Studio 2022**.
 
-We recommend JetBrains Rider as preferred IDE, since it has outstanding .NET support. If you don't have Rider installed, you can download it
-from [here](https://www.jetbrains.com/rider/).
+#### Using JetBrains Rider (Preferred)
+1. Open `ThreeDeeRoomTags.sln`.
+2. Select a configuration (e.g., `Release R26` for Revit 2026).
+3. Click `Build -> Build Solution`.
 
-1. Open JetBrains Rider
-2. Click on `File -> Open` and choose the ThreeDeeRoomTags.sln file to open.
-3. In the `Solutions Configuration` drop-down menu, select `Release R26` or `Debug R26`. Suffix `R26` means compiling for the Revit 2026.
-4. After the solution loads, you can build it by clicking on `Build -> Build Solution`.
-
-Also, you can use Visual Studio. If you don't have Visual Studio installed, download it from [here](https://visualstudio.microsoft.com/downloads/).
-
-1. Open Visual Studio
-2. Click on `File -> Open -> Project/Solution` and locate your solution file to open.
-3. In the `Solutions Configuration` drop-down menu, select `Release R26` or `Debug R26`. Suffix `R26` means compiling for the Revit 2026.
-4. After the solution loads, you can build it by clicking on `Build -> Build Solution`.
-
-### MSI installer and bundle build on the local machine
-
-To build the project for all versions, create the installer and bundle, the project uses [NUKE](https://github.com/nuke-build/nuke)
-
-To execute your NUKE build locally, you can follow these steps:
-
-1. **Install NUKE as a global tool**. First, make sure you have NUKE installed as a global tool. You can install it using dotnet CLI:
-
-    ```powershell
-    dotnet tool install Nuke.GlobalTool --global
-    ```
-
-   You only need to do this once on your machine.
-
-2. **Navigate to your project directory**. Open a terminal / command prompt and navigate to your project's root directory.
-3. **Run the build**. Once you have navigated to your project's root directory, you can run the NUKE build by calling:
-
-   Compile:
-   ```powershell
-   nuke
-   ```
-
-   Create installer:
-   ```powershell
-   nuke createinstaller
-   ```
-
-   Create installer and bundle:
-   ```powershell
-   nuke createinstaller createbundle
-   ```
-
-   This command will execute the NUKE build defined in your project.
-
-### Create new release on GitHub
-
-Publishing the release, generating the installer and bundle, is performed automatically on GitHub.
-
-To execute your NUKE build on GitHub, you can follow these steps:
-
-1. Merge all your commits into the `main` / `master` branch.
-2. Navigate to the `Build/Build.Configuration.cs` file.
-3. Increase the `Version` value.
-4. Make a commit.
-5. Push your changes to GitHub, everything will happen automatically, and you can follow the progress in the Actions section of the repository page.
+#### Using command line (NUKE)
+To build all versions and create the MSI installers/bundles:
+1. Install NUKE: `dotnet tool install Nuke.GlobalTool --global`
+2. Run build: `nuke`
+3. Create MSI: `nuke createinstaller`
+4. Create Bundle: `nuke createinstaller createbundle`
 
 ### Solution structure
 
 | Folder  | Description                                                                |
 |---------|----------------------------------------------------------------------------|
-| build   | Nuke build system. Used to automate project builds                         |
-| install | Add-in installer, called implicitly by the Nuke build                      |
-| source  | Project source code folder. Contains all solution projects                 |
-| output  | Folder of generated files by the build system, such as bundles, installers |
+| build   | Nuke build system configuration                                            |
+| install | WixSharp-based MSI installer projects                                      |
+| source  | Plugin source code (ThreeDeeRoomTags)                                      |
+| output  | Generated MSI bundles and installer files                                  |
 
-### Project structure
+### Project structure (ThreeDeeRoomTags)
 
-| Folder     | Description                                                                                                                                                                                          |
-|------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commands   | External commands invoked from the Revit ribbon. Registered in the `Application` class                                                                                                               |
-| Models     | Classes that encapsulate the app's data, include data transfer objects (DTOs). More [details](https://learn.microsoft.com/en-us/dotnet/architecture/maui/mvvm).                                      |
-| ViewModels | Classes that implement properties and commands to which the view can bind data. More [details](https://learn.microsoft.com/en-us/dotnet/architecture/maui/mvvm).                                     |
-| Views      | Classes that are responsible for defining the structure, layout and appearance of what the user sees on the screen. More [details](https://learn.microsoft.com/en-us/dotnet/architecture/maui/mvvm). |
-| Resources  | Images, sounds, localisation files, etc.                                                                                                                                                             |
-| Utils      | Utilities, extensions, helpers used across the application                                                                                                                                           |
+| Folder     | Description                                             |
+|------------|---------------------------------------------------------|
+| Classes    | Global constants and application logic                  |
+| Models     | Revit API interaction and data processing               |
+| ViewModels | MVVM Logic and UI binding commands                      |
+| Views      | XAML-based user interface                               |
+| Resources  | Embedded assets and tag families                        |
+| Utils      | String parsing and geometry helpers                      |
 
-### Disclaimer
+</details>
 
-This software is provided "as is," without warranty of any kind, express or implied. Use it at your own risk.
+## License
 
-### Learn More
-
-* You can explore more in the [RevitTemplates wiki](https://github.com/Nice3point/RevitTemplates/wiki) page.
+This project is licensed under the **GNU General Public License v3 (GPLv3)**. See the [LICENSE](LICENSE) file for details.
