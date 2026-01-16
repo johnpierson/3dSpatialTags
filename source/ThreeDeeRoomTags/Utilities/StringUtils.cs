@@ -4,29 +4,6 @@ namespace ThreeDeeRoomTags.Utilities
 {
     internal class StringUtils
     {
-        internal static string DecryptString(string encrString)
-        {
-            byte[] b;
-            string decrypted;
-            try
-            {
-                b = Convert.FromBase64String(encrString);
-                decrypted = System.Text.Encoding.ASCII.GetString(b);
-            }
-            catch (FormatException)
-            {
-                decrypted = "";
-            }
-
-            return decrypted;
-        }
-
-        internal static string EncryptString(string strEncrypted)
-        {
-            byte[] b = System.Text.Encoding.ASCII.GetBytes(strEncrypted);
-            string encrypted = Convert.ToBase64String(b);
-            return encrypted;
-        }
         public static double ParseStringFeetAndInches(string inp)
         {
             string expr = "^\\s*(?<minus>-)?\\s*(((?<feet>\\d+)(?<inch>\\d{2})(?<sixt>\\d{2}))|((?<feet>[\\d.]+)')?[\\s-]*((?<inch>\\d+)?[\\s-]*((?<numer>\\d+)/(?<denom>\\d+))?\")?)\\s*$";

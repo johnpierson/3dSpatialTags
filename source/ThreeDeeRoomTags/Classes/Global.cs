@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using System.Reflection;
 using Autodesk.Revit.UI;
-using ThreeDeeRoomTags.Licensing;
 
 namespace ThreeDeeRoomTags.Classes
 {
@@ -17,7 +16,6 @@ namespace ThreeDeeRoomTags.Classes
         public static string[] EmbeddedLibraries =
             ExecutingAssembly.GetManifestResourceNames().Where(x => x.EndsWith(".dll")).ToArray();
 
-        internal static SimpleLicense SimpleLicense { get; set; }
         internal static PushButton ThreeDeeRoomTagPushButton { get; set; }
 
         internal static int ProductId => 160955;
