@@ -77,14 +77,12 @@ To build all versions and create the MSI installers/bundles:
 
 ### Project structure (ThreeDeeRoomTags)
 
-| Folder     | Description                                             |
-|------------|---------------------------------------------------------|
-| Classes    | Global constants and application logic                  |
-| Models     | Revit API interaction and data processing               |
-| ViewModels | MVVM Logic and UI binding commands                      |
-| Views      | XAML-based user interface                               |
-| Resources  | Embedded assets and tag families                        |
-| Utils      | String parsing and geometry helpers                      |
+| Folder              | Description                                             |
+|---------------------|-------------------------------------------------------------|
+| Classes             | Global constants and application configuration          |
+| ThreeDeeRoomTagButton | Model, ViewModel, and View for the tag command         |
+| Resources           | Embedded assets and tag families                        |
+| Utilities           | String parsing and image loading helpers                |
 
 </details>
 

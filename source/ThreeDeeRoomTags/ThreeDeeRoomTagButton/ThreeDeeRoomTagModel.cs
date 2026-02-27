@@ -72,14 +72,14 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
         public ObservableCollection<FamilySymbol> CollectRoomTagFamilySymbols()
         {
             List<FamilySymbol> tags = new FilteredElementCollector(Doc).OfClass(typeof(FamilySymbol)).Cast<FamilySymbol>()
-                .Where(f => f.Family.Name.Contains("3dSpatialElementTag")).ToList();
+                .Where(f => f.Family.Name.Contains(Global.FamilyName)).ToList();
 
             if (!tags.Any())
             {
                 if (LoadFamily())
                 {
                     tags = new FilteredElementCollector(Doc).OfClass(typeof(FamilySymbol)).Cast<FamilySymbol>()
-                        .Where(f => f.Family.Name.Contains("3dSpatialElementTag")).ToList();
+                        .Where(f => f.Family.Name.Contains(Global.FamilyName)).ToList();
                 }
             }
 
@@ -91,14 +91,14 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             bool result;
 
             string familyPath = string.Empty;
-            string installPath = Path.Combine(Global.ExecutingPath, "3dSpatialElementTag.rfa");
+            string installPath = Path.Combine(Global.ExecutingPath, $"{Global.FamilyName}.rfa");
             if (File.Exists(installPath))
             {
                 familyPath = installPath;
             }
             else
             {
-                string tempPath = Path.Combine(Global.TempPath, "3dSpatialElementTag.rfa");
+                string tempPath = Path.Combine(Global.TempPath, $"{Global.FamilyName}.rfa");
                 File.WriteAllBytes(tempPath, Properties.FamilySymbols._3dSpatialElementTag);
 
                 if (File.Exists(tempPath))
@@ -129,7 +129,7 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             {
                 existingTags = new FilteredElementCollector(Doc).OfClass(typeof(FamilyInstance))
                     .WhereElementIsNotElementType().Cast<FamilyInstance>()
-                    .Where(f => f.Symbol.Family.Name.Contains("3dSpatialElementTag")).ToList();
+                    .Where(f => f.Symbol.Family.Name.Contains(Global.FamilyName)).ToList();
             }
 
 
@@ -214,16 +214,13 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
 
         public RevitLinkInstance IsLinkSelected()
         {
-            if (UiDoc.Selection.GetElementIds().Any())
+            var id = UiDoc.Selection.GetElementIds().FirstOrDefault();
+            if (id != null)
             {
-                if (UiDoc.Selection.GetElementIds().FirstOrDefault() != null)
+                var element = Doc.GetElement(id);
+                if (element is RevitLinkInstance linkInstance)
                 {
-                    var id = UiDoc.Selection.GetElementIds().FirstOrDefault() as ElementId;
-                    var element = Doc.GetElement(id);
-                    if (element is RevitLinkInstance linkInstance)
-                    {
-                        return linkInstance;
-                    }
+                    return linkInstance;
                 }
             }
 

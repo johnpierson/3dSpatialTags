@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using Autodesk.Revit.DB.Events;
 using Autodesk.Revit.UI;
 using Serilog;
 using Serilog.Events;
@@ -11,8 +10,6 @@ namespace ThreeDeeRoomTags
     {
         public Result OnStartup(UIControlledApplication application)
         {
-            application.ControlledApplication.ApplicationInitialized += ControlledApplicationOnApplicationInitialized;
-
             // Attach custom event handler
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;
 
@@ -25,12 +22,6 @@ namespace ThreeDeeRoomTags
 
 
             return Result.Succeeded;
-        }
-
-        private void ControlledApplicationOnApplicationInitialized(object sender, ApplicationInitializedEventArgs e)
-        {
-            Autodesk.Revit.ApplicationServices.Application app = sender as Autodesk.Revit.ApplicationServices.Application;
-
         }
 
         public Result OnShutdown(UIControlledApplication application)

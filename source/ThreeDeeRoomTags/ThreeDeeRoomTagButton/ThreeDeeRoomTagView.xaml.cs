@@ -45,7 +45,7 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
 
         private void UIElement_OnMouseDown(object sender, MouseButtonEventArgs e)
         {
-            string url = "https://github.com/johnpierson/3dSpatialTags/blob/main/LICENSE";
+            string url = "https://github.com/johnpierson/3dSpatialTags#readme";
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
                 FileName = url,
