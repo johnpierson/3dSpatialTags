@@ -243,7 +243,7 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
 
         private void OnHelp(Window win)
         {
-            string url = "https://github.com/johnpierson/3dSpatialTags/blob/main/LICENSE";
+            string url = "https://github.com/johnpierson/3dSpatialTags#readme";
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
                 FileName = url,

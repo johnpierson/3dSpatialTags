@@ -9,7 +9,8 @@ namespace ThreeDeeRoomTags.Classes
         internal static string PanelName => "design tech unraveled";
         internal static Assembly ExecutingAssembly = Assembly.GetExecutingAssembly();
         internal static string ExecutingPath = Path.GetDirectoryName(ExecutingAssembly.Location);
-        internal static string TempPath = Environment.GetEnvironmentVariable("TMP", EnvironmentVariableTarget.User);
+        internal static string TempPath = Environment.GetEnvironmentVariable("TMP") ?? Path.GetTempPath();
+        internal const string FamilyName = "3dSpatialElementTag";
         internal static string LogFile = Path.Combine(ExecutingPath, "3dRoomTagsLog.txt");
         internal static string RevitVersion { get; set; }
         internal static string Version = ExecutingAssembly.GetName().Version.ToString();

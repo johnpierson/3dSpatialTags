@@ -14,12 +14,12 @@ namespace ThreeDeeRoomTags.Utilities
                 return 0; // here using return value zero as failure indicator
             }
             int sign = m.Groups["minus"].Success ? -1 : 1;
-            double feet = m.Groups["feet"].Success ? Convert.ToDouble(m.Groups["feet"].Value) : 0;
-            int inch = m.Groups["inch"].Success ? Convert.ToInt32(m.Groups["inch"].Value) : 0;
-            int sixt = m.Groups["sixt"].Success ? Convert.ToInt32(m.Groups["sixt"].Value) : 0;
-            int numer = m.Groups["numer"].Success ? Convert.ToInt32(m.Groups["numer"].Value) : 0;
-            int denom = m.Groups["denom"].Success ? Convert.ToInt32(m.Groups["denom"].Value) : 1;
-            return sign * (feet * 12 + inch + sixt / 16.0 + numer / Convert.ToDouble(denom));
+            double feet = m.Groups["feet"].Success && double.TryParse(m.Groups["feet"].Value, out double parsedFeet) ? parsedFeet : 0;
+            int inch = m.Groups["inch"].Success && int.TryParse(m.Groups["inch"].Value, out int parsedInch) ? parsedInch : 0;
+            int sixt = m.Groups["sixt"].Success && int.TryParse(m.Groups["sixt"].Value, out int parsedSixt) ? parsedSixt : 0;
+            int numer = m.Groups["numer"].Success && int.TryParse(m.Groups["numer"].Value, out int parsedNumer) ? parsedNumer : 0;
+            int denom = m.Groups["denom"].Success && int.TryParse(m.Groups["denom"].Value, out int parsedDenom) && parsedDenom != 0 ? parsedDenom : 1;
+            return sign * (feet * 12 + inch + sixt / 16.0 + numer / (double)denom);
         }
     }
 }
