@@ -66,6 +66,12 @@ To build all versions and create the MSI installers/bundles:
 3. Create MSI: `nuke createinstaller`
 4. Create Bundle: `nuke createinstaller createbundle`
 
+### Spec-driven development
+
+Behavior changes are planned and tracked with [OpenSpec](https://github.com/Fission-AI/OpenSpec). Current product requirements live in `openspec/specs/`; proposed changes live in `openspec/changes/` until implementation and verification are complete.
+
+With Codex, start a change with `/opsx:propose <description>`, implement it with `/opsx:apply <change-name>`, and finish with `/opsx:archive <change-name>`. See [CONTRIBUTING.md](CONTRIBUTING.md) for the complete workflow and verification expectations.
+
 ### Solution structure
 
 | Folder  | Description                                                                |
