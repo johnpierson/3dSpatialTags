@@ -1,0 +1,44 @@
+schema: spec-driven
+
+context: |
+  3D Spatial Tags is a Windows-only Autodesk Revit add-in that creates and updates
+  model-family instances representing Rooms and MEP Spaces in 3D views.
+
+  Stack:
+  - C# 12, WPF, and CommunityToolkit.Mvvm
+  - .NET Framework 4.8 for Revit 2020-2024
+  - .NET 8 Windows for Revit 2025-2026
+  - Autodesk Revit API and Nice3point packages
+  - NUKE build automation and WixSharp installers
+
+  Repository layout:
+  - source/ThreeDeeRoomTags: add-in source, XAML, resources, and manifest
+  - build: NUKE build targets
+  - install: installer projects
+  - revit: versioned Revit family assets
+  - _testFiles: manual Revit integration fixtures
+
+  Engineering constraints:
+  - Preserve behavior across every supported Revit version unless a proposal explicitly narrows support.
+  - Revit document mutations must occur inside valid transactions.
+  - Linked-model coordinates must be transformed into host-model coordinates.
+  - Avoid changes to generated *.Designer.cs files unless their source resource or settings file requires it.
+  - Automated tests cannot replace manual validation in Revit for document and UI behavior.
+  - Builds should identify the tested Revit configuration, such as "Release R26".
+
+rules:
+  proposal:
+    - State the user problem, affected Revit versions, scope, and explicit non-goals.
+    - Call out compatibility, family-resource, installer, or migration impact.
+  specs:
+    - Express observable behavior with SHALL or MUST requirements.
+    - Cover host documents, linked documents, invalid or missing data, and update behavior when relevant.
+    - Include at least one WHEN/THEN scenario for every requirement.
+  design:
+    - Identify Revit API transaction boundaries and host/link coordinate handling when relevant.
+    - Describe multi-target framework implications and manual Revit verification.
+    - Record rejected alternatives for decisions that are difficult to reverse.
+  tasks:
+    - Order tasks so tests or verification accompany the behavior they cover.
+    - Name the Revit build configuration and manual fixture needed for verification.
+    - Keep tasks independently checkable and mark them complete only after verification.
