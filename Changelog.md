@@ -1,3 +1,43 @@
+# 1.3.0
+
+- Tags now remember which link instance they came from. A linked file placed more than once
+  used to have its placements fight over one set of tags: tagging the second found the first's
+  tags and dragged them across, leaving the first untagged on every run, with nothing said
+  about it. Each placement now keeps its own. Tags placed by earlier versions are adopted and
+  brought forward rather than duplicated, and the run says how many.
+- Tags whose room has been deleted are reported. They used to stay in the model saying what
+  they always said, as geometry that gets exported into coordination models. They are counted,
+  not deleted — that is still your call.
+- A text height like `1.5'` now means the same thing on every system locale. On much of
+  continental Europe it was read as 15 feet and written to the family type without a word.
+- The text height and the tags are now one undoable operation. A run that reported "Nothing was
+  placed" had already resized the family type and left it that way, and a successful run took
+  two presses of Ctrl+Z to take back.
+- Duplicate-instance warnings are only hidden for tags this tool stacked on its own. It used to
+  delete every one raised while it was working, including warnings about geometry it had
+  nothing to do with.
+- Opening the dialog on a family document, a read-only document, or with nothing open now
+  explains itself instead of throwing. In a family document it could previously load the tag
+  family into the family you were editing.
+- The dialog is readable and usable from the keyboard: warning and error text now meet WCAG AA
+  contrast, every control has a name for screen readers, tab order runs through the fields
+  before the buttons, and the credit mark is reachable without a mouse.
+- The status card counts what will actually be tagged. Its warning also no longer claims
+  unbounded and redundant rooms cannot be tagged, because they are.
+- Link transforms use the total transform, so a link nested inside another link is tagged in
+  the right place.
+- Failures are written to a log under `%LOCALAPPDATA%\design tech unraveled\3d Spatial Tags`.
+  There was no logging at all, and every error was discarded after being shown once.
+- The published `.bundle` works. Its manifest named an add-in file that was not in the zip, so
+  installing that way silently did nothing. The MSIs were unaffected.
+- Dependencies and the .NET SDK are pinned, with lock files per Revit version, so a release can
+  be rebuilt exactly.
+- Third-party licence notices now ship with the add-in.
+- Installers name Design Tech Unraveled as publisher rather than whatever account built them.
+- Removed about 11 MB of things nothing used: five stale DLLs, a second copy of the tag family
+  embedded in every assembly, five unused images, tracked Revit backups, and leftovers of the
+  old licensing module.
+
 # 1.2.0
 
 - Added support for Revit 2027, which runs on .NET 10.
