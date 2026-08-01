@@ -293,6 +293,18 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             LinkIndex = -1;
         }
 
+        /// <summary>
+        /// Whether this element would actually get a tag.
+        ///
+        /// The same two conditions the planner applies — a point location, and something to
+        /// write in the tag. Kept here rather than duplicated in words so the count the dialog
+        /// shows and the count the run produces cannot drift apart.
+        /// </summary>
+        private static bool IsTaggable(SpatialElement element) =>
+            element.Location is LocationPoint
+            && !string.IsNullOrWhiteSpace(element.get_Parameter(BuiltInParameter.ROOM_NAME)?.AsString())
+            && !string.IsNullOrWhiteSpace(element.get_Parameter(BuiltInParameter.ROOM_NUMBER)?.AsString());
+
         public void RefreshRooms(Phase phase)
         {
             if (phase is null)
@@ -314,24 +326,48 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
                 : Model.CollectSpatialElements(phase, link, TargetIndex);
 
             string spatialElementType = TargetIndex == 0 ? "rooms" : "spaces";
-            FlyOutText = $"{SpatialElements.Count} taggable {spatialElementType} found in the selected phase.";
+
+            // Counted with the same rules the run itself uses, rather than counting everything
+            // collected. The two used to disagree: this said "N taggable rooms" about a list
+            // that included unplaced and blank-named ones the run would silently skip, so the
+            // number before a run and the number after it were different and neither was wrong
+            // about anything the user could see.
+            int taggable = SpatialElements.Count(IsTaggable);
+
+            FlyOutText = $"{taggable} taggable {spatialElementType} found in the selected phase.";
             FlyOutVisibility = true;
             ErrorText = string.Empty;
 
-            int unbounded = SpatialElements.Count(s => s.Area <= 0);
+            int untaggable = SpatialElements.Count - taggable;
+            int unbounded = SpatialElements.Count(s => s.Area <= 0 && IsTaggable(s));
 
             // Cleared rather than left standing: this used to return early when a phase had no
             // unbounded elements, so a warning from a previous phase stayed on screen describing
             // a count that no longer existed.
-            if (unbounded == 0)
+            if (untaggable == 0 && unbounded == 0)
             {
                 UnboundedFlyOutText = string.Empty;
                 UnboundedFlyOutVisibility = false;
                 return;
             }
 
-            UnboundedFlyOutText =
-                $"Warning: {unbounded} {spatialElementType} are unbounded, redundant or unplaced. Those cannot be tagged, but tags will still be created for the placed ones.";
+            var warnings = new List<string>();
+
+            if (untaggable > 0)
+            {
+                warnings.Add($"{untaggable} {spatialElementType} are unplaced or have no name or number, so they cannot be tagged.");
+            }
+
+            // Said accurately. This used to claim unbounded and redundant elements "cannot be
+            // tagged", which is not what happens: they are placed, they carry the name and
+            // number Revit gave them, and they get tags like anything else. What is worth
+            // saying is that the tag lands at a point in a room with no boundary.
+            if (unbounded > 0)
+            {
+                warnings.Add($"{unbounded} {spatialElementType} are unbounded or redundant. They will still be tagged, at their placement point.");
+            }
+
+            UnboundedFlyOutText = "Warning: " + string.Join(" ", warnings);
             UnboundedFlyOutVisibility = true;
         }
 

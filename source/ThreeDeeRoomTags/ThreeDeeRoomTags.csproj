@@ -66,15 +66,16 @@
     <ItemGroup>
       <None Remove="Resources\3dSpatialElementTag.rfa" />
       <None Remove="Resources\DesignTechUnraveledMark_512x383.png" />
-      <None Remove="Resources\HeaderImage.png" />
-      <None Remove="Resources\HeaderImage.svg" />
-      <None Remove="Resources\logo.ico" />
       <None Remove="Resources\rise.3dRoomTags_32.png" />
-      <None Remove="Resources\rise.3dRoomTags_50.png" />
     </ItemGroup>
 
+    <!--
+        The tag family is embedded once, through FamilySymbols.resx, which is the copy
+        LoadFamily actually reads. It used to also be included as a raw EmbeddedResource, so
+        827 KB of it shipped twice in every assembly, for eight Revit versions, in both MSIs
+        and the bundle — and nothing ever read the second copy.
+    -->
     <ItemGroup>
-      <EmbeddedResource Include="Resources\3dSpatialElementTag.rfa" />
       <EmbeddedResource Include="Resources\rise.3dRoomTags_32.png" />
     </ItemGroup>
 
@@ -119,12 +120,22 @@
       <None Include="Fonts\SpaceGrotesk-OFL.txt" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
+    <!--
+        MIT and Apache-2.0 both require their notices to accompany the binaries. The add-in
+        ships CommunityToolkit.Mvvm, three Serilog assemblies and the Nice3point packages, and
+        until now none of their notices travelled with it.
+    -->
+    <ItemGroup>
+      <None Include="..\..\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <!--
+        Only what the dialog draws. HeaderImage.png, HeaderImage.svg, HeaderImage.xaml,
+        logo.ico and rise.3dRoomTags_50.png were compiled into every assembly and referenced by
+        nothing — the .xaml as a WPF Page, and the .svg in a format WPF cannot render at all.
+    -->
     <ItemGroup>
       <Resource Include="Resources\DesignTechUnraveledMark_512x383.png" />
-      <Resource Include="Resources\HeaderImage.png" />
-      <Resource Include="Resources\HeaderImage.svg" />
-      <Resource Include="Resources\logo.ico" />
-      <Resource Include="Resources\rise.3dRoomTags_50.png" />
     </ItemGroup>
 
     <ItemGroup>
