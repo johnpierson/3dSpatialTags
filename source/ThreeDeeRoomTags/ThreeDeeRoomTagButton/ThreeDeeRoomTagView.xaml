@@ -73,18 +73,32 @@
                 BorderThickness="0,2,0,0"
                 Padding="16,10,16,14">
             <DockPanel LastChildFill="False">
-                <Image DockPanel.Dock="Left"
-                       Source="/ThreeDeeRoomTags;component/Resources/DesignTechUnraveledMark_512x383.png"
-                       Height="30"
-                       HorizontalAlignment="Left"
-                       VerticalAlignment="Center"
-                       MouseDown="UIElement_OnMouseDown"
-                       Cursor="Hand"
-                       ToolTip="design tech unraveled — opens the licence on GitHub" />
+                <!--
+                    A Button rather than an Image with a MouseDown handler. The mark is a
+                    link, and a link that only answers to a mouse cannot be reached at all
+                    from the keyboard or announced as activatable by a screen reader. The
+                    chrome is stripped back to the bare image so it still looks like a mark.
+                -->
+                <Button DockPanel.Dock="Left"
+                        Click="LicenceLink_OnClick"
+                        AutomationProperties.Name="design tech unraveled — open the licence on GitHub"
+                        TabIndex="9"
+                        Cursor="Hand"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        ToolTip="design tech unraveled — opens the licence on GitHub">
+                    <Image Source="/ThreeDeeRoomTags;component/Resources/DesignTechUnraveledMark_512x383.png"
+                           Height="30" />
+                </Button>
 
                 <Button DockPanel.Dock="Right"
                         MinWidth="150"
                         Content="Create / Update Tags"
+                        AutomationProperties.Name="Create or update tags"
+                        TabIndex="7"
                         Style="{StaticResource Interlude.PrimaryButton}"
                         IsDefault="True"
                         Command="{Binding Run, Mode=OneWay}"
@@ -95,6 +109,8 @@
                         MinWidth="88"
                         Margin="0,0,8,0"
                         Content="Close"
+                        AutomationProperties.Name="Close"
+                        TabIndex="8"
                         IsCancel="True"
                         Command="{Binding Close, Mode=OneWay}"
                         CommandParameter="{Binding ElementName=Win}" />
@@ -119,6 +135,9 @@
                                        Text="Target elements" />
                             <ComboBox Grid.Column="1"
                                       Name="TargetComboBox"
+                                      AutomationProperties.Name="Target elements"
+                                      AutomationProperties.HelpText="Whether to tag rooms or MEP spaces."
+                                      TabIndex="0"
                                       HorizontalAlignment="Stretch"
                                       SelectedIndex="{Binding TargetIndex, Mode=TwoWay, FallbackValue=0}"
                                       SelectionChanged="TargetChanged">
@@ -137,6 +156,8 @@
                                        Text="Read from a link" />
                             <StackPanel Grid.Column="1">
                                 <CheckBox Name="FromLinkCheckbox"
+                                          AutomationProperties.Name="Use a linked model"
+                                          TabIndex="1"
                                           Content="{Binding FromLinkCaption, FallbackValue='Use a linked model'}"
                                           IsChecked="{Binding FromLink, Mode=TwoWay, FallbackValue=False}"
                                           IsEnabled="{Binding HasLinks, FallbackValue=False}"
@@ -152,6 +173,8 @@
                                 -->
                                 <ComboBox Name="LinkComboBox"
                                           Margin="0,8,0,0"
+                                          AutomationProperties.Name="Linked model"
+                                          TabIndex="2"
                                           HorizontalAlignment="Stretch"
                                           SelectedIndex="{Binding LinkIndex, Mode=TwoWay}"
                                           ItemsSource="{Binding Links}"
@@ -176,6 +199,8 @@
                                        Text="Phase" />
                             <ComboBox Grid.Column="1"
                                       Name="PhaseComboBox"
+                                      AutomationProperties.Name="Phase"
+                                      TabIndex="3"
                                       HorizontalAlignment="Stretch"
                                       ItemsSource="{Binding Phases}"
                                       SelectionChanged="Selector_OnSelectionChanged">
@@ -197,6 +222,8 @@
                                        Text="Tag family type" />
                             <StackPanel Grid.Column="1">
                                 <ComboBox Name="FamilySymbolComboBox"
+                                          AutomationProperties.Name="Tag family type"
+                                          TabIndex="4"
                                           HorizontalAlignment="Stretch"
                                           SelectedIndex="{Binding FamilySymbolIndex, Mode=TwoWay}"
                                           ItemsSource="{Binding RoomTagFamilySymbols}"
@@ -231,6 +258,8 @@
                                        Text="Existing tags" />
                             <StackPanel Grid.Column="1">
                                 <CheckBox Content="Update the ones already placed"
+                                          AutomationProperties.Name="Update the tags already placed"
+                                          TabIndex="5"
                                           IsChecked="{Binding UpdateExisting, Mode=TwoWay, FallbackValue=True}" />
                                 <TextBlock Style="{StaticResource Interlude.HelpText}"
                                            Margin="0,4,0,0"
@@ -240,8 +269,16 @@
 
                         <!-- Status: what the current selection would actually tag. -->
                         <!-- Right and bottom margins clear the card's own four-pixel hard shadow. -->
+                        <!--
+                            Announced as a live region: the counts and warnings here change in
+                            response to a selection made elsewhere in the dialog, so a screen
+                            reader user would otherwise never learn that the thing they just
+                            chose has anything to say about it.
+                        -->
                         <Border Style="{StaticResource Interlude.CardWithShadow}"
                                 Margin="0,6,6,6"
+                                AutomationProperties.Name="Status"
+                                AutomationProperties.LiveSetting="Polite"
                                 Visibility="{Binding HasStatus, Converter={StaticResource b2v}}">
                             <StackPanel>
                                 <TextBlock Style="{StaticResource Interlude.SectionHeader}"
@@ -299,10 +336,19 @@
                                    Style="{StaticResource Interlude.FieldLabel}"
                                    Text="Text height" />
                         <StackPanel Grid.Column="1">
-                            <TextBox Text="{Binding TextHeightString, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox AutomationProperties.Name="Text height"
+                                     AutomationProperties.HelpText="A height in feet and inches, for example 2 feet 0 inches."
+                                     TabIndex="6"
+                                     Text="{Binding TextHeightString, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <!--
+                                Said plainly, because "model units" was not true: the parser
+                                only ever accepted imperial feet-and-inches notation, so a
+                                metric user reading that entered a number and got an error
+                                with no hint as to why.
+                            -->
                             <TextBlock Style="{StaticResource Interlude.HelpText}"
                                        Margin="0,4,0,0"
-                                       Text="In model units, as feet and inches — for example 2' 0&quot;. Applied to the selected tag family type when tags are created." />
+                                       Text="In feet and inches — for example 2' 0&quot;, 6&quot;, or 1' 3/4&quot;. Applied to the selected tag family type when tags are created. Leave it blank to keep the family's own height." />
                             <TextBlock Style="{StaticResource Interlude.ErrorText}"
                                        Margin="0,4,0,0"
                                        Text="That is not a length this tool can read; the tag family's own text height will be left alone."

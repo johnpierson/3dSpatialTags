@@ -57,7 +57,7 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             vm.RefreshPhasesForCurrentSource();
         }
 
-        private void UIElement_OnMouseDown(object sender, MouseButtonEventArgs e)
+        private void LicenceLink_OnClick(object sender, RoutedEventArgs e)
         {
             string url = "https://github.com/johnpierson/3dSpatialTags/blob/main/LICENSE";
 

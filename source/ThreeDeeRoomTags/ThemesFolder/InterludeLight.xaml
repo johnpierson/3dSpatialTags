@@ -1,10 +1,10 @@
-<!--
+﻿<!--
     The Interlude look, in light mode.
 
     Interlude (github.com/johnpierson/Interlude) resolves this at run time from a ThemeDefinition:
     a palette, a set of metrics, and a stack of control styles that read both through
     DynamicResource. This add-in has one dialog and one appearance, so the resolution is done here
-    instead — the keys keep Interlude's names and values so the two stay recognisably the same UI,
+    instead â€” the keys keep Interlude's names and values so the two stay recognisably the same UI,
     and so a change over there is a search-and-replace over here.
 
     The values below are Interlude's default theme (ThemeDefinition.Default) resolved for light:
@@ -16,7 +16,7 @@
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
   <!-- ==================================================================================
-       Palette — Interlude's ThemePalette.Neo.
+       Palette â€” Interlude's ThemePalette.Neo.
        ================================================================================== -->
 
   <SolidColorBrush x:Key="Interlude.Background" Color="#FFF4E0" />
@@ -33,8 +33,27 @@
   <SolidColorBrush x:Key="Interlude.Accent" Color="#FF5C8A" />
   <SolidColorBrush x:Key="Interlude.AccentHover" Color="#FF87A8" />
   <SolidColorBrush x:Key="Interlude.AccentForeground" Color="#000000" />
-  <SolidColorBrush x:Key="Interlude.Error" Color="#E5383B" />
-  <SolidColorBrush x:Key="Interlude.Warning" Color="#FF8A00" />
+  <!--
+      Error and Warning are darker than Interlude's own signal colours, and deliberately so.
+      They carry the two messages in this dialog a user most needs to be able to read â€” the
+      unbounded-rooms warning and every failure line â€” and both are set small: the warning at
+      13px, every error line at 11px. At those sizes WCAG AA asks for 4.5:1.
+
+      Interlude's #FF8A00 measures 2.36:1 on the white status card and 2.17:1 on the cream
+      ground; #E5383B measures 4.23:1 and 3.88:1. The values below clear 4.5:1 against both
+      backgrounds with room to spare (warning 4.99/4.58, error 6.22/5.71) while staying
+      recognisably the same amber and red.
+  -->
+  <SolidColorBrush x:Key="Interlude.Error" Color="#C1121F" />
+  <SolidColorBrush x:Key="Interlude.Warning" Color="#B45400" />
+
+  <!--
+      Focus is signalled by recolouring a control's border and nothing else, so that border
+      has to carry the whole message. The accent pink reads 2.94:1 against the white control
+      background, under the 3:1 WCAG asks of a non-text indicator; this deepened accent reads
+      5.8:1. Kept separate from Interlude.Accent so the primary button's fill is untouched.
+  -->
+  <SolidColorBrush x:Key="Interlude.Focus" Color="#C81048" />
   <SolidColorBrush x:Key="Interlude.Success" Color="#00B36B" />
   <Color x:Key="Interlude.ShadowColor">#FF000000</Color>
 
@@ -225,7 +244,7 @@
             </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
               <Setter TargetName="Surface" Property="BorderBrush"
-                      Value="{DynamicResource Interlude.Accent}" />
+                      Value="{DynamicResource Interlude.Focus}" />
             </Trigger>
 
             <!-- Pressing drops the button onto its own shadow: shift it, and take the shadow away. -->
@@ -371,7 +390,7 @@
               <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Interlude.Accent}" />
             </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
-              <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Interlude.Accent}" />
+              <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Interlude.Focus}" />
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
               <Setter TargetName="Box" Property="Background"
@@ -476,7 +495,7 @@
             </Trigger>
             <Trigger Property="IsKeyboardFocusWithin" Value="True">
               <Setter TargetName="Surface" Property="BorderBrush"
-                      Value="{DynamicResource Interlude.Accent}" />
+                      Value="{DynamicResource Interlude.Focus}" />
             </Trigger>
             <Trigger Property="IsReadOnly" Value="True">
               <Setter TargetName="Surface" Property="Background"
@@ -541,7 +560,7 @@
 
                 <!--
                     SelectionBoxItemTemplate is what draws the closed box, and WPF fills it from
-                    ItemTemplate/ItemTemplateSelector only — never from DisplayMemberPath. A combo
+                    ItemTemplate/ItemTemplateSelector only â€” never from DisplayMemberPath. A combo
                     box here therefore needs an ItemTemplate, or the closed box falls back to the
                     item's ToString.
                 -->
@@ -601,7 +620,7 @@
             </Trigger>
             <Trigger Property="IsKeyboardFocusWithin" Value="True">
               <Setter TargetName="Surface" Property="BorderBrush"
-                      Value="{DynamicResource Interlude.Accent}" />
+                      Value="{DynamicResource Interlude.Focus}" />
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
               <Setter TargetName="Surface" Property="Background"
@@ -920,7 +939,7 @@
 
   <!--
       The window itself. Interlude leaves the operating system's title bar alone and themes only
-      the client area — a custom caption is one more thing to get wrong on a high-DPI multi-monitor
+      the client area â€” a custom caption is one more thing to get wrong on a high-DPI multi-monitor
       Revit session, and it buys nothing the palette does not already give.
   -->
   <Style x:Key="Interlude.Window" TargetType="{x:Type Window}">
