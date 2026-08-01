@@ -1,6 +1,7 @@
 using System.Reflection;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.UI;
+using Serilog;
 using ThreeDeeRoomTags.Classes;
 using ThreeDeeRoomTags.Utilities;
 
@@ -55,7 +56,9 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
                 // Everything from here reaches the user as a sentence rather than as a stack
                 // trace in Revit's own error dialog. A corrupt user.config, a document that
                 // turns read-only between the guard and the transaction, a family that will
-                // not load — none of them are worth a crash report.
+                // not load — none of them are worth a crash report. The detail goes to the log.
+                Log.Error(ex, "The 3d Spatial Tags dialog could not be opened");
+
                 message = $"3d Spatial Tags could not open: {ex.Message}";
 
                 return Result.Failed;

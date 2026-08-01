@@ -1,5 +1,3 @@
-﻿using System.Reflection;
-using Autodesk.Revit.DB.Events;
 using Autodesk.Revit.UI;
 using Serilog;
 using Serilog.Events;
@@ -11,31 +9,62 @@ namespace ThreeDeeRoomTags
     {
         public Result OnStartup(UIControlledApplication application)
         {
-            application.ControlledApplication.ApplicationInitialized += ControlledApplicationOnApplicationInitialized;
-
-            // Attach custom event handler
-            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;
-
             //get the revit version
             Global.RevitVersion = application.ControlledApplication.VersionNumber;
 
-            //CreateLogger();
+            CreateLogger();
+
+            Log.Information("3d Spatial Tags {Version} starting on Revit {RevitVersion}",
+                Global.Version, Global.RevitVersion);
 
             CreateRisePanel(application);
 
-
             return Result.Succeeded;
-        }
-
-        private void ControlledApplicationOnApplicationInitialized(object sender, ApplicationInitializedEventArgs e)
-        {
-            Autodesk.Revit.ApplicationServices.Application app = sender as Autodesk.Revit.ApplicationServices.Application;
-
         }
 
         public Result OnShutdown(UIControlledApplication application)
         {
+            Log.CloseAndFlush();
+
             return Result.Succeeded;
+        }
+
+        /// <summary>
+        /// Sets up the log this add-in writes when something goes wrong.
+        ///
+        /// There was no logging at all. Three Serilog assemblies shipped in every build, the
+        /// only call to configure them was commented out, and seven catch blocks discarded
+        /// whatever they caught — so a user reporting "it says tags could not be created" left
+        /// nothing behind to work from: not the exception, not the Revit version, not the
+        /// document.
+        ///
+        /// Warnings and above only, rolling daily, capped at a megabyte a file and a week of
+        /// them, so an add-in nobody is having trouble with writes almost nothing and one that
+        /// is cannot fill a disk. Nothing more identifying than a document title is recorded.
+        /// </summary>
+        private static void CreateLogger()
+        {
+            try
+            {
+                Log.Logger = new LoggerConfiguration()
+                    .MinimumLevel.Information()
+                    .WriteTo.File(
+                        Global.LogFile,
+                        restrictedToMinimumLevel: LogEventLevel.Warning,
+                        rollingInterval: RollingInterval.Day,
+                        retainedFileCountLimit: 7,
+                        fileSizeLimitBytes: 1_000_000,
+                        rollOnFileSizeLimit: true,
+                        shared: true)
+                    .WriteTo.Debug()
+                    .CreateLogger();
+            }
+            catch (Exception)
+            {
+                // A log that cannot be opened must not stop the add-in loading. Serilog's
+                // silent logger keeps every Log.* call downstream harmless.
+                Log.Logger = Serilog.Core.Logger.None;
+            }
         }
 
         internal void CreateRisePanel(UIControlledApplication app)
@@ -46,47 +75,5 @@ namespace ThreeDeeRoomTags
             //create the code compliance button
             ThreeDeeRoomTagButton.ThreeDeeRoomTagCommand.CreateButton(ribbonPanel);
         }
-        private Assembly CurrentDomainOnAssemblyResolve(object sender, ResolveEventArgs args)
-        {
-            // Get assembly name
-            var assemblyName = new AssemblyName(args.Name).Name + ".dll";
-
-            // Get resource name
-            var resourceName = Global.EmbeddedLibraries.FirstOrDefault(x => x.EndsWith(assemblyName));
-            if (resourceName == null)
-            {
-                return null;
-            }
-
-            // Load assembly from resource
-            using (var stream = Global.ExecutingAssembly.GetManifestResourceStream(resourceName))
-            {
-                if (stream is null)
-                {
-                    return null;
-                }
-
-                // Read in a loop rather than trusting one call to fill the buffer: Stream.Read is
-                // allowed to return fewer bytes than asked for, and a short read here hands
-                // Assembly.Load a truncated image.
-                var bytes = new byte[stream.Length];
-                var offset = 0;
-
-                while (offset < bytes.Length)
-                {
-                    var read = stream.Read(bytes, offset, bytes.Length - offset);
-
-                    if (read == 0)
-                    {
-                        return null;
-                    }
-
-                    offset += read;
-                }
-
-                return Assembly.Load(bytes);
-            }
-        }
-       
     }
 }

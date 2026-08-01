@@ -4,6 +4,7 @@ using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.DB.Mechanical;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
+using Serilog;
 using ThreeDeeRoomTags.Classes;
 using ThreeDeeRoomTags.Tagging;
 using ThreeDeeRoomTags.Utilities;
@@ -189,10 +190,13 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
                         familyPath = tempPath;
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     // An unwritable temp folder is not something the user can fix from here; the
-                    // dialog reports the missing family instead.
+                    // dialog reports the missing family instead. The cause goes to the log,
+                    // because "no tag family is loaded" on its own has sent people looking in
+                    // entirely the wrong place.
+                    Log.Warning(ex, "Could not extract the bundled tag family to {TempPath}", Global.TempPath);
                     return false;
                 }
             }

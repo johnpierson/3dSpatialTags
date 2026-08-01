@@ -69,10 +69,11 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
                     UseShellExecute = true
                 });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // No browser, or a policy that blocks launching one. Not worth taking the dialog
                 // down over a credit link.
+                Serilog.Log.Warning(ex, "Could not open the licence link {Url}", url);
             }
         }
 

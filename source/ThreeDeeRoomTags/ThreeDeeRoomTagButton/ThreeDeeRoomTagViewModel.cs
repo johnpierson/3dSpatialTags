@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
+using Serilog;
 using ThreeDeeRoomTags.Classes;
 
 namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
@@ -445,7 +446,11 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             catch (Exception ex)
             {
                 // A Revit API failure here used to escape into Revit's own error dialog with a
-                // stack trace. The user can act on a sentence; they cannot act on that.
+                // stack trace. The user can act on a sentence; they cannot act on that — and
+                // the stack trace, which is what a maintainer needs, goes to the log.
+                Log.Error(ex, "Tagging run failed. Target {TargetIndex}, from link {FromLink}, {Count} elements",
+                    TargetIndex, FromLink, SpatialElements?.Count ?? 0);
+
                 ErrorText = $"Tags could not be created: {ex.Message}";
                 FlyOutVisibility = false;
             }
