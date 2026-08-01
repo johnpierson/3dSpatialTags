@@ -26,6 +26,7 @@ Global
 		Debug R24|Any CPU = Debug R24|Any CPU
 		Debug R25|Any CPU = Debug R25|Any CPU
 		Debug R26|Any CPU = Debug R26|Any CPU
+		Debug R27|Any CPU = Debug R27|Any CPU
 		Debug|Any CPU = Debug|Any CPU
 		Installer|Any CPU = Installer|Any CPU
 		Release R20|Any CPU = Release R20|Any CPU
@@ -35,6 +36,7 @@ Global
 		Release R24|Any CPU = Release R24|Any CPU
 		Release R25|Any CPU = Release R25|Any CPU
 		Release R26|Any CPU = Release R26|Any CPU
+		Release R27|Any CPU = Release R27|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
@@ -45,6 +47,7 @@ Global
 		{9BBCB13B-66AC-4758-807E-47D9CD8A24D1}.Debug R24|Any CPU.ActiveCfg = Debug|Any CPU
 		{9BBCB13B-66AC-4758-807E-47D9CD8A24D1}.Debug R25|Any CPU.ActiveCfg = Debug|Any CPU
 		{9BBCB13B-66AC-4758-807E-47D9CD8A24D1}.Debug R26|Any CPU.ActiveCfg = Debug|Any CPU
+		{9BBCB13B-66AC-4758-807E-47D9CD8A24D1}.Debug R27|Any CPU.ActiveCfg = Debug|Any CPU
 		{9BBCB13B-66AC-4758-807E-47D9CD8A24D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9BBCB13B-66AC-4758-807E-47D9CD8A24D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9BBCB13B-66AC-4758-807E-47D9CD8A24D1}.Installer|Any CPU.ActiveCfg = Release|Any CPU
@@ -55,6 +58,7 @@ Global
 		{9BBCB13B-66AC-4758-807E-47D9CD8A24D1}.Release R24|Any CPU.ActiveCfg = Release|Any CPU
 		{9BBCB13B-66AC-4758-807E-47D9CD8A24D1}.Release R25|Any CPU.ActiveCfg = Release|Any CPU
 		{9BBCB13B-66AC-4758-807E-47D9CD8A24D1}.Release R26|Any CPU.ActiveCfg = Release|Any CPU
+		{9BBCB13B-66AC-4758-807E-47D9CD8A24D1}.Release R27|Any CPU.ActiveCfg = Release|Any CPU
 		{9BBCB13B-66AC-4758-807E-47D9CD8A24D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9BBCB13B-66AC-4758-807E-47D9CD8A24D1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F74E9A4F-0FE3-4830-9E8F-AC3A222F6420}.Debug R20|Any CPU.ActiveCfg = Debug|Any CPU
@@ -64,6 +68,7 @@ Global
 		{F74E9A4F-0FE3-4830-9E8F-AC3A222F6420}.Debug R24|Any CPU.ActiveCfg = Debug|Any CPU
 		{F74E9A4F-0FE3-4830-9E8F-AC3A222F6420}.Debug R25|Any CPU.ActiveCfg = Debug|Any CPU
 		{F74E9A4F-0FE3-4830-9E8F-AC3A222F6420}.Debug R26|Any CPU.ActiveCfg = Debug|Any CPU
+		{F74E9A4F-0FE3-4830-9E8F-AC3A222F6420}.Debug R27|Any CPU.ActiveCfg = Debug|Any CPU
 		{F74E9A4F-0FE3-4830-9E8F-AC3A222F6420}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F74E9A4F-0FE3-4830-9E8F-AC3A222F6420}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F74E9A4F-0FE3-4830-9E8F-AC3A222F6420}.Installer|Any CPU.ActiveCfg = Release|Any CPU
@@ -75,6 +80,7 @@ Global
 		{F74E9A4F-0FE3-4830-9E8F-AC3A222F6420}.Release R24|Any CPU.ActiveCfg = Release|Any CPU
 		{F74E9A4F-0FE3-4830-9E8F-AC3A222F6420}.Release R25|Any CPU.ActiveCfg = Release|Any CPU
 		{F74E9A4F-0FE3-4830-9E8F-AC3A222F6420}.Release R26|Any CPU.ActiveCfg = Release|Any CPU
+		{F74E9A4F-0FE3-4830-9E8F-AC3A222F6420}.Release R27|Any CPU.ActiveCfg = Release|Any CPU
 		{F74E9A4F-0FE3-4830-9E8F-AC3A222F6420}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F74E9A4F-0FE3-4830-9E8F-AC3A222F6420}.Release|Any CPU.Build.0 = Release|Any CPU
 		{22899425-3C38-4BE1-9F6C-AB0B1F8A2029}.Debug R20|Any CPU.ActiveCfg = Debug R20|Any CPU
@@ -91,6 +97,8 @@ Global
 		{22899425-3C38-4BE1-9F6C-AB0B1F8A2029}.Debug R25|Any CPU.Build.0 = Debug R25|Any CPU
 		{22899425-3C38-4BE1-9F6C-AB0B1F8A2029}.Debug R26|Any CPU.ActiveCfg = Debug R26|Any CPU
 		{22899425-3C38-4BE1-9F6C-AB0B1F8A2029}.Debug R26|Any CPU.Build.0 = Debug R26|Any CPU
+		{22899425-3C38-4BE1-9F6C-AB0B1F8A2029}.Debug R27|Any CPU.ActiveCfg = Debug R27|Any CPU
+		{22899425-3C38-4BE1-9F6C-AB0B1F8A2029}.Debug R27|Any CPU.Build.0 = Debug R27|Any CPU
 		{22899425-3C38-4BE1-9F6C-AB0B1F8A2029}.Debug|Any CPU.ActiveCfg = Debug R26|Any CPU
 		{22899425-3C38-4BE1-9F6C-AB0B1F8A2029}.Debug|Any CPU.Build.0 = Debug R26|Any CPU
 		{22899425-3C38-4BE1-9F6C-AB0B1F8A2029}.Installer|Any CPU.ActiveCfg = Debug R26|Any CPU
@@ -109,6 +117,8 @@ Global
 		{22899425-3C38-4BE1-9F6C-AB0B1F8A2029}.Release R25|Any CPU.Build.0 = Release R25|Any CPU
 		{22899425-3C38-4BE1-9F6C-AB0B1F8A2029}.Release R26|Any CPU.ActiveCfg = Release R26|Any CPU
 		{22899425-3C38-4BE1-9F6C-AB0B1F8A2029}.Release R26|Any CPU.Build.0 = Release R26|Any CPU
+		{22899425-3C38-4BE1-9F6C-AB0B1F8A2029}.Release R27|Any CPU.ActiveCfg = Release R27|Any CPU
+		{22899425-3C38-4BE1-9F6C-AB0B1F8A2029}.Release R27|Any CPU.Build.0 = Release R27|Any CPU
 		{22899425-3C38-4BE1-9F6C-AB0B1F8A2029}.Release|Any CPU.ActiveCfg = Release R26|Any CPU
 		{22899425-3C38-4BE1-9F6C-AB0B1F8A2029}.Release|Any CPU.Build.0 = Release R26|Any CPU
 	EndGlobalSection

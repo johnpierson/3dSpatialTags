@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.IO;
 using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.DB.Mechanical;
@@ -9,8 +9,32 @@ using ThreeDeeRoomTags.Utilities;
 
 namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
 {
+    /// <summary>What a tagging run actually did, so the dialog can say so.</summary>
+    public class TaggingResult
+    {
+        public List<FamilyInstance> Tags { get; } = new List<FamilyInstance>();
+
+        /// <summary>
+        /// Existing tags that could not be touched — owned by another user, or changed in central.
+        /// Counted and reported rather than replaced: placing a second tag on top of one somebody
+        /// else owns leaves two tags in the model and a suppressed warning saying so.
+        /// </summary>
+        public int SkippedNotEditable { get; set; }
+
+        /// <summary>
+        /// Set when the chosen family cannot hold a value this tool writes. The run is rolled back
+        /// whole rather than leaving half a model tagged with blanks.
+        /// </summary>
+        public string MissingParameter { get; set; }
+    }
+
     public class ThreeDeeRoomTagModel
     {
+        /// <summary>The parameters the bundled tag family carries, and this tool writes.</summary>
+        private static readonly string[] RequiredTagParameters = { "Name", "Number", "SpatialElementId" };
+
+        private const string TagFamilyName = "3dSpatialElementTag";
+
         public UIApplication UiApp { get; }
         public Document Doc { get; }
         public UIDocument UiDoc { get; }
@@ -23,93 +47,127 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
 
         public ObservableCollection<Phase> CollectPhases()
         {
-            List<Phase>  phases = new FilteredElementCollector(Doc).OfClass(typeof(Phase)).WhereElementIsNotElementType().Cast<Phase>().ToList();
-            
-            return new ObservableCollection<Phase>(phases);
+            return CollectPhases(Doc);
         }
+
         public ObservableCollection<Phase> CollectPhases(RevitLinkInstance linkInstance)
         {
-            var doc = linkInstance.GetLinkDocument();
+            // A link can be unloaded between the dialog opening and a selection being made, and an
+            // unloaded link has no document at all.
+            var doc = linkInstance?.GetLinkDocument();
+
+            return doc is null ? new ObservableCollection<Phase>() : CollectPhases(doc);
+        }
+
+        private static ObservableCollection<Phase> CollectPhases(Document doc)
+        {
             List<Phase> phases = new FilteredElementCollector(doc).OfClass(typeof(Phase)).WhereElementIsNotElementType().Cast<Phase>().ToList();
 
             return new ObservableCollection<Phase>(phases);
         }
+
         public ObservableCollection<SpatialElement> CollectSpatialElements(Phase phase, int targetIndex)
         {
-            if (targetIndex == 0)
-            {
-                List<Room>
-                    rooms = new FilteredElementCollector(Doc).OfCategory(BuiltInCategory.OST_Rooms).Cast<Room>().Where(r => r.get_Parameter(BuiltInParameter.ROOM_PHASE).AsElementId().Equals(phase.Id)).ToList();
-                return new ObservableCollection<SpatialElement>(rooms);
-            }
-            else
-            {
-                List<Space>
-                    spaces = new FilteredElementCollector(Doc).OfCategory(BuiltInCategory.OST_MEPSpaces).Cast<Space>().Where(r => r.get_Parameter(BuiltInParameter.ROOM_PHASE).AsElementId().Equals(phase.Id)).ToList();
-                return new ObservableCollection<SpatialElement>(spaces);
-            }
+            return CollectSpatialElements(Doc, phase, targetIndex);
         }
+
         public ObservableCollection<SpatialElement> CollectSpatialElements(Phase phase, RevitLinkInstance linkInstance, int targetIndex)
         {
-            var doc = linkInstance.GetLinkDocument();
-           
-            if (targetIndex == 0)
+            var doc = linkInstance?.GetLinkDocument();
+
+            return doc is null
+                ? new ObservableCollection<SpatialElement>()
+                : CollectSpatialElements(doc, phase, targetIndex);
+        }
+
+        private static ObservableCollection<SpatialElement> CollectSpatialElements(Document doc, Phase phase, int targetIndex)
+        {
+            if (phase is null)
             {
-                List<Room>
-                    rooms = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Rooms).Cast<Room>().Where(r => r.get_Parameter(BuiltInParameter.ROOM_PHASE).AsElementId().Equals(phase.Id)).ToList();
-                return new ObservableCollection<SpatialElement>(rooms);
-            }
-            if(targetIndex == 1)
-            {
-                List<Space>
-                    spaces = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_MEPSpaces).Cast<Space>().Where(r => r.get_Parameter(BuiltInParameter.ROOM_PHASE).AsElementId().Equals(phase.Id)).ToList();
-                return new ObservableCollection<SpatialElement>(spaces);
+                return new ObservableCollection<SpatialElement>();
             }
 
-            return new ObservableCollection<SpatialElement>();
+            var category = targetIndex == 0 ? BuiltInCategory.OST_Rooms : BuiltInCategory.OST_MEPSpaces;
+
+            var elements = new FilteredElementCollector(doc)
+                .OfCategory(category)
+                .WhereElementIsNotElementType()
+                .OfType<SpatialElement>()
+
+                // Null-guarded, and compared from the phase's own id so a missing parameter is a
+                // non-match rather than a null reference: an element in the category without a
+                // phase parameter is not a room or space this tool understands.
+                .Where(s => phase.Id.Equals(s.get_Parameter(BuiltInParameter.ROOM_PHASE)?.AsElementId()))
+                .ToList();
+
+            return new ObservableCollection<SpatialElement>(elements);
         }
 
         public ObservableCollection<FamilySymbol> CollectRoomTagFamilySymbols()
         {
-            List<FamilySymbol> tags = new FilteredElementCollector(Doc).OfClass(typeof(FamilySymbol)).Cast<FamilySymbol>()
-                .Where(f => f.Family.Name.Contains("3dSpatialElementTag")).ToList();
+            List<FamilySymbol> tags = FindTagSymbols();
 
-            if (!tags.Any())
+            if (!tags.Any() && LoadFamily())
             {
-                if (LoadFamily())
-                {
-                    tags = new FilteredElementCollector(Doc).OfClass(typeof(FamilySymbol)).Cast<FamilySymbol>()
-                        .Where(f => f.Family.Name.Contains("3dSpatialElementTag")).ToList();
-                }
+                tags = FindTagSymbols();
             }
 
             return new ObservableCollection<FamilySymbol>(tags.OrderBy(f => f.Name));
         }
 
+        private List<FamilySymbol> FindTagSymbols()
+        {
+            return new FilteredElementCollector(Doc).OfClass(typeof(FamilySymbol)).Cast<FamilySymbol>()
+                .Where(f => f.Family.Name.Contains(TagFamilyName)).ToList();
+        }
+
+        /// <summary>
+        /// The first parameter this tag instance is missing, or null if it carries all of them.
+        ///
+        /// The families on offer are found by a name match, so a user family called something like
+        /// "3dSpatialElementTag-old" gets listed too. Whether it will take the values this tool
+        /// writes can only be answered by a placed instance — the parameters are instance
+        /// parameters, and a family symbol does not carry them.
+        /// </summary>
+        private static string FirstMissingParameter(FamilyInstance tag)
+        {
+            return RequiredTagParameters.FirstOrDefault(name => tag.LookupParameter(name) is null);
+        }
+
         public bool LoadFamily()
         {
-            bool result;
-
             string familyPath = string.Empty;
-            string installPath = Path.Combine(Global.ExecutingPath, "3dSpatialElementTag.rfa");
+            string installPath = Path.Combine(Global.ExecutingPath, $"{TagFamilyName}.rfa");
+
             if (File.Exists(installPath))
             {
                 familyPath = installPath;
             }
             else
             {
-                string tempPath = Path.Combine(Global.TempPath, "3dSpatialElementTag.rfa");
-                File.WriteAllBytes(tempPath, Properties.FamilySymbols._3dSpatialElementTag);
-
-                if (File.Exists(tempPath))
+                try
                 {
-                    familyPath = tempPath;
+                    string tempPath = Path.Combine(Global.TempPath, $"{TagFamilyName}.rfa");
+                    File.WriteAllBytes(tempPath, Properties.FamilySymbols._3dSpatialElementTag);
+
+                    if (File.Exists(tempPath))
+                    {
+                        familyPath = tempPath;
+                    }
+                }
+                catch (Exception)
+                {
+                    // An unwritable temp folder is not something the user can fix from here; the
+                    // dialog reports the missing family instead.
+                    return false;
                 }
             }
-            
+
             if (string.IsNullOrWhiteSpace(familyPath)) return false;
 
-            using (Transaction t = new Transaction(Doc,"Loading tag"))
+            bool result;
+
+            using (Transaction t = new Transaction(Doc, "Loading tag"))
             {
                 t.Start();
                 result = Doc.LoadFamily(familyPath);
@@ -119,24 +177,25 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             return result;
         }
 
-        public List<FamilyInstance> CreateRoomTags(FamilySymbol spatialElementTag, ObservableCollection<SpatialElement> spatialElements, bool updateExisting = true, RevitLinkInstance linkInstance = null)
+        public TaggingResult CreateRoomTags(FamilySymbol spatialElementTag, ObservableCollection<SpatialElement> spatialElements, bool updateExisting = true, RevitLinkInstance linkInstance = null)
         {
+            var result = new TaggingResult();
 
-            List<FamilyInstance> currentTags = new List<FamilyInstance>();
-            List<FamilyInstance> existingTags = null;
+            List<FamilyInstance> existingTags = new List<FamilyInstance>();
 
             if (updateExisting)
             {
                 existingTags = new FilteredElementCollector(Doc).OfClass(typeof(FamilyInstance))
                     .WhereElementIsNotElementType().Cast<FamilyInstance>()
-                    .Where(f => f.Symbol.Family.Name.Contains("3dSpatialElementTag")).ToList();
+                    .Where(f => f.Symbol.Family.Name.Contains(TagFamilyName)).ToList();
             }
 
+            var transform = linkInstance?.GetTransform();
 
             using (Transaction t = new Transaction(Doc, "Placing 3d spatial element tags"))
             {
                 t.Start();
-                
+
                 if (!spatialElementTag.IsActive)
                 {
                     spatialElementTag.Activate();
@@ -144,57 +203,83 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
 
                 foreach (var spatialElement in spatialElements)
                 {
-                    //skip unplaced rooms
-                    //if(spatialElement.Area <= 0) continue;
-                    
                     var spatialElementLocation = spatialElement.Location as LocationPoint;
 
                     if (spatialElementLocation is null) continue;
 
                     var spatialElementPoint = spatialElementLocation.Point;
 
-                    if (linkInstance != null)
+                    if (transform != null)
                     {
-                        var transform = linkInstance.GetTransform();
                         spatialElementPoint = transform.OfPoint(spatialElementPoint);
                     }
 
                     //if the room name and number are blank, then skip.
-                    var roomName = spatialElement.get_Parameter(BuiltInParameter.ROOM_NAME).AsString();
-                    var roomNumber = spatialElement.get_Parameter(BuiltInParameter.ROOM_NUMBER).AsString();
+                    var roomName = spatialElement.get_Parameter(BuiltInParameter.ROOM_NAME)?.AsString();
+                    var roomNumber = spatialElement.get_Parameter(BuiltInParameter.ROOM_NUMBER)?.AsString();
 
                     if (string.IsNullOrWhiteSpace(roomName) || string.IsNullOrWhiteSpace(roomNumber))
                     {
                         continue;
                     }
 
-
                     FamilyInstance roomTagInstance = null;
 
-                    if (updateExisting && existingTags.Any())
+                    if (updateExisting)
                     {
-                        var foundTag = existingTags.FirstOrDefault(f => f.LookupParameter("SpatialElementId").AsString().Equals(spatialElement.UniqueId));
+                        // Null-safe on both sides: a tag whose id parameter was removed or never
+                        // filled in reads back as null, and comparing against it threw.
+                        var foundTag = existingTags.FirstOrDefault(f =>
+                            string.Equals(f.LookupParameter("SpatialElementId")?.AsString(), spatialElement.UniqueId, StringComparison.Ordinal));
+
                         if (foundTag != null)
                         {
                             if (foundTag.IsElementEditable())
                             {
                                 roomTagInstance = foundTag;
                                 foundTag.Symbol = spatialElementTag;
-                                var tagLocation = foundTag.Location as LocationPoint;
-                                tagLocation.Point = spatialElementPoint;
+
+                                if (foundTag.Location is LocationPoint tagLocation)
+                                {
+                                    tagLocation.Point = spatialElementPoint;
+                                }
+                            }
+                            else
+                            {
+                                // Somebody else owns it. Placing a replacement on top would leave
+                                // the model with two tags for one room, so this one is reported.
+                                result.SkippedNotEditable++;
+                                continue;
                             }
                         }
                     }
-                    if(roomTagInstance == null) 
+
+                    if (roomTagInstance == null)
                     {
                         roomTagInstance = Doc.Create.NewFamilyInstance(spatialElementPoint, spatialElementTag, StructuralType.NonStructural);
+                    }
+
+                    // Checked once, on the first tag, and the whole run is abandoned if the family
+                    // cannot hold what this tool writes. Carrying on would leave a model full of
+                    // tags with no room name in them and no way to match them up again.
+                    if (result.Tags.Count == 0)
+                    {
+                        result.MissingParameter = FirstMissingParameter(roomTagInstance);
+
+                        if (result.MissingParameter != null)
+                        {
+                            t.RollBack();
+                            result.Tags.Clear();
+                            result.SkippedNotEditable = 0;
+                            return result;
+                        }
                     }
 
                     roomTagInstance.LookupParameter("Name").Set(roomName);
                     roomTagInstance.LookupParameter("Number").Set(roomNumber);
                     roomTagInstance.LookupParameter("SpatialElementId").Set(spatialElement.UniqueId);
 
-                    currentTags.Add(roomTagInstance);
+                    result.Tags.Add(roomTagInstance);
                 }
 
                 // Set failure handler to hide identical instances warnings which may be posted.
@@ -203,31 +288,30 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
                 t.Commit(failureOptions);
             }
 
-            return currentTags;
+            return result;
         }
+
         public ObservableCollection<RevitLinkInstance> GetRevitLinks()
         {
-            var links = new FilteredElementCollector(Doc).OfClass(typeof(RevitLinkInstance)).Cast<RevitLinkInstance>().OrderBy(l => l.Name).ToList();
+            // Unloaded links are left out: they have no document to read rooms from, and offering
+            // one only leads to an empty phase list and no explanation.
+            var links = new FilteredElementCollector(Doc).OfClass(typeof(RevitLinkInstance)).Cast<RevitLinkInstance>()
+                .Where(l => l.GetLinkDocument() != null)
+                .OrderBy(l => l.Name).ToList();
 
             return new ObservableCollection<RevitLinkInstance>(links);
         }
 
         public RevitLinkInstance IsLinkSelected()
         {
-            if (UiDoc.Selection.GetElementIds().Any())
+            var id = UiDoc.Selection.GetElementIds().FirstOrDefault();
+
+            if (id is null)
             {
-                if (UiDoc.Selection.GetElementIds().FirstOrDefault() != null)
-                {
-                    var id = UiDoc.Selection.GetElementIds().FirstOrDefault() as ElementId;
-                    var element = Doc.GetElement(id);
-                    if (element is RevitLinkInstance linkInstance)
-                    {
-                        return linkInstance;
-                    }
-                }
+                return null;
             }
 
-            return null;
+            return Doc.GetElement(id) as RevitLinkInstance;
         }
     }
 }

@@ -16,5 +16,5 @@
 - Manual fixture and steps:
 - [ ] Host-document behavior checked where applicable
 - [ ] Linked-document behavior checked where applicable
-- [ ] Compatibility impact across Revit 2020-2026 considered
+- [ ] Compatibility impact across Revit 2020-2027 considered
 
