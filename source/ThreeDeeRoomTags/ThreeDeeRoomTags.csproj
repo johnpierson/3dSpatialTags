@@ -50,6 +50,19 @@
         <StartArguments>/language ENG</StartArguments>
     </PropertyGroup>
 
+    <!--
+        One lock file per Revit version, not the default one per project.
+
+        NuGet keys lock files by target framework, and five of the eight configurations are
+        net48 with different Revit API package versions behind them — they would overwrite
+        each other's entries on every restore. Keying the path on RevitVersion instead gives
+        each configuration a stable, reviewable record of exactly what it resolved.
+    -->
+    <PropertyGroup>
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <NuGetLockFilePath>packages.R$(RevitVersion).lock.json</NuGetLockFilePath>
+    </PropertyGroup>
+
     <ItemGroup>
       <None Remove="Resources\3dSpatialElementTag.rfa" />
       <None Remove="Resources\DesignTechUnraveledMark_512x383.png" />
@@ -65,17 +78,29 @@
       <EmbeddedResource Include="Resources\rise.3dRoomTags_32.png" />
     </ItemGroup>
 
+    <!--
+        Every version here was a wildcard, so two builds of the same commit on different days
+        could resolve different dependencies and a published release could not be reproduced.
+
+        The Revit API packages stay parameterized by RevitVersion: their major version IS the
+        Revit year, and the whole per-configuration scheme depends on that substitution. They
+        are pinned to an exact patch by the lock file below rather than by this range.
+
+        Everything else is pinned outright — those are ordinary libraries with no tie to the
+        Revit release, and there is no reason for a new major of Serilog to arrive unannounced
+        in a release build.
+    -->
     <ItemGroup>
-		<PackageReference Include="Nice3point.Revit.Build.Tasks" Version="2.*" />
+        <PackageReference Include="Nice3point.Revit.Build.Tasks" Version="2.0.2" />
         <PackageReference Include="Nice3point.Revit.Toolkit" Version="$(RevitVersion).*" />
         <PackageReference Include="Nice3point.Revit.Extensions" Version="$(RevitVersion).*" />
         <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitVersion).*" />
         <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitVersion).*" />
         <PackageReference Include="Nice3point.Revit.Api.RevitAddInUtility" Version="$(RevitVersion).*" />
-	    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.*" />
-        <PackageReference Include="Serilog" Version="4.*" />
-        <PackageReference Include="Serilog.Sinks.Debug" Version="3.*" />
-	    <PackageReference Include="Serilog.Sinks.File" Version="5.*" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+        <PackageReference Include="Serilog" Version="4.4.0" />
+        <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+        <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     </ItemGroup>
 
     <!--
