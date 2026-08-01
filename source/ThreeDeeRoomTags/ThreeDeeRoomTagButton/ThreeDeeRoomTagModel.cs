@@ -5,6 +5,7 @@ using Autodesk.Revit.DB.Mechanical;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using ThreeDeeRoomTags.Classes;
+using ThreeDeeRoomTags.Tagging;
 using ThreeDeeRoomTags.Utilities;
 
 namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
@@ -30,8 +31,21 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
 
     public class ThreeDeeRoomTagModel
     {
+        /// <summary>
+        /// The parameter a tag stores its source element's id in. This is the whole basis of
+        /// matching a tag back to its room on a later run, so it is named once here rather
+        /// than spelled out at each of the places that read and write it.
+        /// </summary>
+        internal const string SpatialElementIdParameter = "SpatialElementId";
+
+        internal const string NameParameter = "Name";
+        internal const string NumberParameter = "Number";
+
+        /// <summary>The parameter the text height is written to, on the family type.</summary>
+        internal const string TextHeightParameter = "Text Height";
+
         /// <summary>The parameters the bundled tag family carries, and this tool writes.</summary>
-        private static readonly string[] RequiredTagParameters = { "Name", "Number", "SpatialElementId" };
+        private static readonly string[] RequiredTagParameters = { NameParameter, NumberParameter, SpatialElementIdParameter };
 
         private const string TagFamilyName = "3dSpatialElementTag";
 
@@ -177,20 +191,70 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             return result;
         }
 
+        /// <summary>
+        /// Reads a spatial element into the plain data the planner works on, applying the link
+        /// transform on the way so that everything downstream is in host coordinates.
+        /// </summary>
+        private static SpatialElementSnapshot Snapshot(SpatialElement spatialElement, Transform transform)
+        {
+            var location = spatialElement.Location as LocationPoint;
+            var point = location?.Point;
+
+            if (point != null && transform != null)
+            {
+                point = transform.OfPoint(point);
+            }
+
+            return new SpatialElementSnapshot
+            {
+                SourceId = spatialElement.UniqueId,
+                Name = spatialElement.get_Parameter(BuiltInParameter.ROOM_NAME)?.AsString(),
+                Number = spatialElement.get_Parameter(BuiltInParameter.ROOM_NUMBER)?.AsString(),
+                IsPlaced = location != null,
+                Point = point is null ? default : new TagPoint(point.X, point.Y, point.Z),
+                Area = spatialElement.Area
+            };
+        }
+
+        /// <summary>
+        /// Reads an existing tag into plain data. The editability question is asked here, once
+        /// per tag, rather than in the middle of placing things.
+        /// </summary>
+        private static ExistingTagSnapshot Snapshot(FamilyInstance tag) => new ExistingTagSnapshot
+        {
+            TagId = tag.UniqueId,
+
+            // Null-safe: a tag whose id parameter was removed or never filled in reads back as
+            // null, and comparing against it threw.
+            StoredSourceId = tag.LookupParameter(SpatialElementIdParameter)?.AsString(),
+            IsEditable = tag.IsElementEditable()
+        };
+
+        private List<FamilyInstance> CollectExistingTags()
+        {
+            return new FilteredElementCollector(Doc).OfClass(typeof(FamilyInstance))
+                .WhereElementIsNotElementType().Cast<FamilyInstance>()
+                .Where(f => f.Symbol.Family.Name.Contains(TagFamilyName)).ToList();
+        }
+
         public TaggingResult CreateRoomTags(FamilySymbol spatialElementTag, ObservableCollection<SpatialElement> spatialElements, bool updateExisting = true, RevitLinkInstance linkInstance = null)
         {
             var result = new TaggingResult();
 
-            List<FamilyInstance> existingTags = new List<FamilyInstance>();
-
-            if (updateExisting)
-            {
-                existingTags = new FilteredElementCollector(Doc).OfClass(typeof(FamilyInstance))
-                    .WhereElementIsNotElementType().Cast<FamilyInstance>()
-                    .Where(f => f.Symbol.Family.Name.Contains(TagFamilyName)).ToList();
-            }
+            List<FamilyInstance> existingTags = updateExisting ? CollectExistingTags() : new List<FamilyInstance>();
 
             var transform = linkInstance?.GetTransform();
+
+            // Decided in full before the transaction opens, so that what the run intends to do
+            // is a value that can be inspected and tested rather than a shape that only exists
+            // while a document is being written to.
+            var sourcesById = spatialElements.ToDictionary(s => s.UniqueId, s => s, StringComparer.Ordinal);
+            var tagsById = existingTags.ToDictionary(t => t.UniqueId, t => t, StringComparer.Ordinal);
+
+            var plan = TagPlanner.Plan(
+                spatialElements.Select(s => Snapshot(s, transform)).ToList(),
+                existingTags.Select(Snapshot).ToList(),
+                updateExisting);
 
             using (Transaction t = new Transaction(Doc, "Placing 3d spatial element tags"))
             {
@@ -201,60 +265,36 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
                     spatialElementTag.Activate();
                 }
 
-                foreach (var spatialElement in spatialElements)
+                foreach (var operation in plan)
                 {
-                    var spatialElementLocation = spatialElement.Location as LocationPoint;
-
-                    if (spatialElementLocation is null) continue;
-
-                    var spatialElementPoint = spatialElementLocation.Point;
-
-                    if (transform != null)
+                    if (operation.Kind == TagOperationKind.Skip)
                     {
-                        spatialElementPoint = transform.OfPoint(spatialElementPoint);
-                    }
+                        // Somebody else owns it. Placing a replacement on top would leave the
+                        // model with two tags for one room, so this one is reported. The other
+                        // skip reasons are nothing to report: they describe elements that could
+                        // never carry a tag.
+                        if (operation.Reason == SkipReason.NotEditable) result.SkippedNotEditable++;
 
-                    //if the room name and number are blank, then skip.
-                    var roomName = spatialElement.get_Parameter(BuiltInParameter.ROOM_NAME)?.AsString();
-                    var roomNumber = spatialElement.get_Parameter(BuiltInParameter.ROOM_NUMBER)?.AsString();
-
-                    if (string.IsNullOrWhiteSpace(roomName) || string.IsNullOrWhiteSpace(roomNumber))
-                    {
                         continue;
                     }
 
-                    FamilyInstance roomTagInstance = null;
+                    var source = operation.Source;
+                    var spatialElement = sourcesById[source.SourceId];
+                    var spatialElementPoint = new XYZ(source.Point.X, source.Point.Y, source.Point.Z);
 
-                    if (updateExisting)
+                    FamilyInstance roomTagInstance;
+
+                    if (operation.Kind == TagOperationKind.Update)
                     {
-                        // Null-safe on both sides: a tag whose id parameter was removed or never
-                        // filled in reads back as null, and comparing against it threw.
-                        var foundTag = existingTags.FirstOrDefault(f =>
-                            string.Equals(f.LookupParameter("SpatialElementId")?.AsString(), spatialElement.UniqueId, StringComparison.Ordinal));
+                        roomTagInstance = tagsById[operation.ExistingTagId];
+                        roomTagInstance.Symbol = spatialElementTag;
 
-                        if (foundTag != null)
+                        if (roomTagInstance.Location is LocationPoint tagLocation)
                         {
-                            if (foundTag.IsElementEditable())
-                            {
-                                roomTagInstance = foundTag;
-                                foundTag.Symbol = spatialElementTag;
-
-                                if (foundTag.Location is LocationPoint tagLocation)
-                                {
-                                    tagLocation.Point = spatialElementPoint;
-                                }
-                            }
-                            else
-                            {
-                                // Somebody else owns it. Placing a replacement on top would leave
-                                // the model with two tags for one room, so this one is reported.
-                                result.SkippedNotEditable++;
-                                continue;
-                            }
+                            tagLocation.Point = spatialElementPoint;
                         }
                     }
-
-                    if (roomTagInstance == null)
+                    else
                     {
                         roomTagInstance = Doc.Create.NewFamilyInstance(spatialElementPoint, spatialElementTag, StructuralType.NonStructural);
                     }
@@ -275,9 +315,9 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
                         }
                     }
 
-                    roomTagInstance.LookupParameter("Name").Set(roomName);
-                    roomTagInstance.LookupParameter("Number").Set(roomNumber);
-                    roomTagInstance.LookupParameter("SpatialElementId").Set(spatialElement.UniqueId);
+                    roomTagInstance.LookupParameter(NameParameter).Set(source.Name);
+                    roomTagInstance.LookupParameter(NumberParameter).Set(source.Number);
+                    roomTagInstance.LookupParameter(SpatialElementIdParameter).Set(spatialElement.UniqueId);
 
                     result.Tags.Add(roomTagInstance);
                 }

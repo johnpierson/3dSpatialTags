@@ -405,7 +405,7 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             Properties.Settings.Default.TextHeight = TextHeightString;
             Properties.Settings.Default.Save();
 
-            var param = famSymb.LookupParameter("Text Height");
+            var param = famSymb.LookupParameter(ThreeDeeRoomTagModel.TextHeightParameter);
 
             if (param is null || param.IsReadOnly || param.StorageType != StorageType.Double)
             {
