@@ -1,36 +1,59 @@
+﻿> **Status.** Most of this change has shipped. Some of it shipped in PR #5 (commit `1877828`)
+> outside the OpenSpec process, and the rest in the remediation that followed an audit of the
+> repository. The requirements that now describe current behavior have been merged into
+> `openspec/specs/spatial-tagging/spec.md`; what is left unchecked below is genuinely
+> unimplemented.
+>
+> Two decisions differ from the design and are worth reading before picking this up:
+>
+> - **Source identity is composed into the existing `SpatialElementId` parameter** rather than
+>   split across new `SourceDocumentId` and `SourceLinkInstanceId` parameters (task 2.1). Adding
+>   parameters means editing the bundled `.rfa` and every family under `revit/` in Revit, and
+>   until that is done a tool writing to them would reject every family already in the wild.
+>   The composite form fixes the defect on families people already have.
+>   `TagSourceIdentity.ToStoredValue` and `TryParse` are the only two places that change when
+>   the family does gain the parameters.
+> - **The duplicate-instance warning suppression was narrowed, not removed** (task 3.4). It now
+>   silences only warnings whose every element is a tag the run itself created or updated,
+>   which is the tool arguing with itself after "place a fresh set every time". Removing it
+>   entirely would make that documented mode noisy for no gain.
+>
+> Remaining work is the family-parameter upgrade (2.1, 2.4) and the manual Revit verification
+> in section 6, none of which can be done without a Revit session.
+
 ## 1. Deterministic Workflow Foundations
 
-- [ ] 1.1 Add a test project that can exercise framework-neutral tagging workflow logic for the .NET Framework 4.8 and .NET 8 Windows target families, and verify the empty suite in `Debug R24` and `Debug R26`.
-- [ ] 1.2 Implement the composite source identity value type and document-identity adapter, with tests for host elements, transformed linked elements, and two instances of the same linked document.
-- [ ] 1.3 Implement typed family-parameter validation and operation-result models, with tests for missing parameters, wrong storage types, read-only parameters, invalid height values, and outcome aggregation.
+- [x] 1.1 Add a test project that can exercise framework-neutral tagging workflow logic for the .NET Framework 4.8 and .NET 8 Windows target families, and verify the empty suite in `Debug R24` and `Debug R26`.
+- [x] 1.2 Implement the composite source identity value type and document-identity adapter, with tests for host elements, transformed linked elements, and two instances of the same linked document.
+- [x] 1.3 Implement typed family-parameter validation and operation-result models, with tests for missing parameters, wrong storage types, read-only parameters, invalid height values, and outcome aggregation.
 
 ## 2. Family And Link Compatibility
 
 - [ ] 2.1 Add `SourceDocumentId` and `SourceLinkInstanceId` text parameters to the embedded `source/ThreeDeeRoomTags/Resources/3dSpatialElementTag.rfa` and each supported source family under `revit/`, preserving the legacy `SpatialElementId` parameter.
-- [ ] 2.2 Update family discovery to offer only compatible symbols, load the upgraded bundled family when required, and return an actionable compatibility result instead of dereferencing missing parameters.
-- [ ] 2.3 Filter unavailable link instances during discovery and revalidate `GetLinkDocument()` immediately before collection and operation planning.
+- [x] 2.2 Update family discovery to offer only compatible symbols, load the upgraded bundled family when required, and return an actionable compatibility result instead of dereferencing missing parameters.
+- [x] 2.3 Filter unavailable link instances during discovery and revalidate `GetLinkDocument()` immediately before collection and operation planning.
 - [ ] 2.4 Verify the upgraded family resource is embedded in `Debug R24` and `Debug R26` outputs and included by the existing installer/bundle pipeline.
 
 ## 3. Tag Planning And Transactions
 
-- [ ] 3.1 Build an operation planner that validates source data, applies the selected link transform exactly once, and classifies each element as create, update, or skip before opening a mutation transaction; cover host and linked cases with tests.
-- [ ] 3.2 Index existing tags by composite source identity and implement conservative legacy matching, with tests for one-to-one migration, repeated link instances, duplicate legacy tags, and ambiguous document sources.
-- [ ] 3.3 Implement coordinated text-height and tag mutations with explicit transaction/transaction-group rollback, and verify an unexpected failure cannot produce a success result or retain partial changes.
-- [ ] 3.4 Change non-editable matches to skipped ownership/model-update outcomes, remove the duplicate-creation fallback and broad duplicate warning suppression, and test that no replacement operation is planned.
-- [ ] 3.5 Persist composite identity on every created or unambiguously migrated tag and report created, updated, skipped, and failed counts with category-specific reasons.
+- [x] 3.1 Build an operation planner that validates source data, applies the selected link transform exactly once, and classifies each element as create, update, or skip before opening a mutation transaction; cover host and linked cases with tests.
+- [x] 3.2 Index existing tags by composite source identity and implement conservative legacy matching, with tests for one-to-one migration, repeated link instances, duplicate legacy tags, and ambiguous document sources.
+- [x] 3.3 Implement coordinated text-height and tag mutations with explicit transaction/transaction-group rollback, and verify an unexpected failure cannot produce a success result or retain partial changes.
+- [x] 3.4 Change non-editable matches to skipped ownership/model-update outcomes, remove the duplicate-creation fallback and broad duplicate warning suppression, and test that no replacement operation is planned.
+- [x] 3.5 Persist composite identity on every created or unambiguously migrated tag and report created, updated, skipped, and failed counts with category-specific reasons.
 
 ## 4. View-Model State And Command Safety
 
-- [ ] 4.1 Replace collection-index workflow state with selected target, link, phase, and family objects while resolving existing saved preferences only when they match an available object.
+- [x] 4.1 Replace collection-index workflow state with selected target, link, phase, and family objects while resolving existing saved preferences only when they match an available object.
 - [ ] 4.2 Centralize dependent clearing and recollection in the view model so target, link mode, selected link, and phase changes cannot leave stale spatial elements; add state-transition tests for each selection sequence.
-- [ ] 4.3 Derive `RunCommand.CanExecute` and `HasLoadedLinks` from valid workflow state, replace the invalid `Rooms.Count` and integer-to-Boolean bindings, and reduce code-behind to view-only behavior.
-- [ ] 4.4 Surface family, link, height, ownership, ambiguity, and rollback results in the dialog without broad exception swallowing, then verify command enablement and messages through WPF-level tests where practical.
+- [x] 4.3 Derive `RunCommand.CanExecute` and `HasLoadedLinks` from valid workflow state, replace the invalid `Rooms.Count` and integer-to-Boolean bindings, and reduce code-behind to view-only behavior.
+- [x] 4.4 Surface family, link, height, ownership, ambiguity, and rollback results in the dialog without broad exception swallowing, then verify command enablement and messages through WPF-level tests where practical.
 
 ## 5. Dependencies And Automated Verification
 
-- [ ] 5.1 Remove the unused `Microsoft.Net.Http` reference, evaluate whether `PresentationFramework.Aero2` remains necessary, and pin compatible Nice3point and application package versions per supported Revit configuration.
-- [ ] 5.2 Run the automated tests and compile `Debug R24`, confirming zero errors and documenting any unavoidable warnings for the .NET Framework/Revit 2024 configuration.
-- [ ] 5.3 Run the automated tests and compile `Debug R26`, confirming zero errors and documenting any unavoidable warnings for the .NET 8/Revit 2026 configuration.
+- [x] 5.1 Remove the unused `Microsoft.Net.Http` reference, evaluate whether `PresentationFramework.Aero2` remains necessary, and pin compatible Nice3point and application package versions per supported Revit configuration.
+- [x] 5.2 Run the automated tests and compile `Debug R24`, confirming zero errors and documenting any unavoidable warnings for the .NET Framework/Revit 2024 configuration.
+- [x] 5.3 Run the automated tests and compile `Debug R26`, confirming zero errors and documenting any unavoidable warnings for the .NET 8/Revit 2026 configuration.
 
 ## 6. Manual Revit Verification
 

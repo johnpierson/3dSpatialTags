@@ -5,17 +5,21 @@ context: |
   model-family instances representing Rooms and MEP Spaces in 3D views.
 
   Stack:
-  - C# 12, WPF, and CommunityToolkit.Mvvm
+  - C# latest, WPF, and CommunityToolkit.Mvvm
   - .NET Framework 4.8 for Revit 2020-2024
   - .NET 8 Windows for Revit 2025-2026
+  - .NET 10 Windows for Revit 2027
   - Autodesk Revit API and Nice3point packages
   - NUKE build automation and WixSharp installers
+  - Serilog, writing warnings and above to the user's local app data
 
   Repository layout:
   - source/ThreeDeeRoomTags: add-in source, XAML, resources, and manifest
+  - source/ThreeDeeRoomTags/Tagging: Revit-free run planning, covered by tests
   - build: NUKE build targets
   - install: installer projects
   - revit: versioned Revit family assets
+  - tests/ThreeDeeRoomTags.Workflow.Tests: framework-neutral tests, net48 and net8.0
   - _testFiles: manual Revit integration fixtures
 
   Engineering constraints:
@@ -24,7 +28,9 @@ context: |
   - Linked-model coordinates must be transformed into host-model coordinates.
   - Avoid changes to generated *.Designer.cs files unless their source resource or settings file requires it.
   - Automated tests cannot replace manual validation in Revit for document and UI behavior.
+  - Logic that can be decided without the Revit API belongs under Tagging, where it is tested.
   - Builds should identify the tested Revit configuration, such as "Release R26".
+  - Dependencies are pinned and lock files are committed, one per Revit version.
 
 rules:
   proposal:

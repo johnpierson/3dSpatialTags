@@ -16,7 +16,25 @@ Use one OpenSpec change for one cohesive behavior change. Pure refactors, docume
 
 ## Verification
 
-Build the configurations affected by the change. At minimum, changes shared by all supported versions should be checked against one .NET Framework target and one .NET 8 target when the required Revit SDK assemblies are available.
+Run the tests:
 
-Revit API and WPF behavior also requires manual validation. Record the Revit version, fixture file, host or linked-document setup, and observed result in the change tasks and pull request.
+```bash
+dotnet test tests/ThreeDeeRoomTags.Workflow.Tests/ThreeDeeRoomTags.Workflow.Tests.csproj
+```
+
+They cover the logic that can be decided without the Revit API — run planning, source identity,
+and the feet-and-inches parser — and run against both framework families the add-in ships on.
+Anything you can write a test for there, write it there: it is the only part of this codebase
+that can be checked without opening Revit. CI runs them on every push and pull request.
+
+Build the configurations affected by the change. At minimum, changes shared by all supported
+versions should be checked against one .NET Framework target, one .NET 8 target and one .NET 10
+target — `Release R24`, `Release R26` and `Release R27` — when the required Revit SDK assemblies
+are available. Note that a **Debug** build publishes into `%AppData%\Autodesk\Revit\Addins\`,
+so building a Debug configuration replaces your installed add-in.
+
+Revit API and WPF behavior also requires manual validation. Record the Revit version, fixture
+file, host or linked-document setup, and observed result in the change tasks and pull request.
+The fixtures under `_testFiles` are `main.rvt` with `link.rvt` and `link2.rvt`; placing one
+linked file twice is the case worth checking whenever tag matching changes.
 
