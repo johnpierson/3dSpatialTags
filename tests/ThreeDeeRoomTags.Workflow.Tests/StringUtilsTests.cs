@@ -99,21 +99,48 @@ namespace ThreeDeeRoomTags.Workflow.Tests
         }
 
         /// <summary>
-        /// DEFECT, pinned deliberately (finding TAG-06).
+        /// Regression test for TAG-06.
         ///
-        /// The feet group is converted with Convert.ToDouble, which follows the ambient
+        /// The feet group used to go through Convert.ToDouble, which follows the ambient
         /// culture and permits group separators. On a culture that groups with '.', "1.5"
-        /// parses as fifteen — so a German user asking for 1.5 feet of text gets 15 feet,
-        /// silently, persisted to their settings and written to the family type.
+        /// parsed as fifteen — so a German user asking for 1.5 feet of text got 15 feet,
+        /// silently, persisted to their settings and written to the family type. This test
+        /// asserted 180 before the parser was made culture-invariant.
         ///
-        /// This assertion is expected to change to 18 when the parser is made
-        /// culture-invariant. It exists so that the fix has a visible before and after.
+        /// Cultures chosen for how they treat '.': dot-grouping (de-DE, it-IT, pt-BR,
+        /// tr-TR), space-grouping where "1.5" is not a number at all (fr-FR), and the
+        /// dot-decimal baseline (en-US).
         /// </summary>
-        [Fact]
-        public void DecimalFeetAreMisparsedOnACommaDecimalCulture()
+        [Theory]
+        [InlineData("en-US")]
+        [InlineData("de-DE")]
+        [InlineData("it-IT")]
+        [InlineData("pt-BR")]
+        [InlineData("tr-TR")]
+        [InlineData("fr-FR")]
+        [InlineData("")]
+        public void DecimalFeetParseIdenticallyInEveryCulture(string culture)
+        {
+            InCulture(culture, () =>
+            {
+                Assert.Equal(18, StringUtils.ParseStringFeetAndInches("1.5'"), 6);
+                Assert.Equal(30.6, StringUtils.ParseStringFeetAndInches("2.55'"), 6);
+            });
+        }
+
+        /// <summary>
+        /// Input that matches the regex but is not a number comes back as the failure
+        /// indicator, which the dialog surfaces as an unreadable height. Previously this
+        /// threw a FormatException into a catch that swallowed it to the same zero — same
+        /// outcome, by accident rather than on purpose.
+        /// </summary>
+        [Theory]
+        [InlineData("1.2.3'")]
+        [InlineData(".'")]
+        public void ReturnsZeroForFeetThatAreNotANumber(string input)
         {
             InCulture("de-DE", () =>
-                Assert.Equal(180, StringUtils.ParseStringFeetAndInches("1.5'"), 6));
+                Assert.Equal(0, StringUtils.ParseStringFeetAndInches(input)));
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace ThreeDeeRoomTags.Utilities
 {
@@ -14,7 +15,24 @@ namespace ThreeDeeRoomTags.Utilities
                 return 0; // here using return value zero as failure indicator
             }
             int sign = m.Groups["minus"].Success ? -1 : 1;
-            double feet = m.Groups["feet"].Success ? Convert.ToDouble(m.Groups["feet"].Value) : 0;
+
+            // Parsed invariantly, not with Convert.ToDouble. Convert.ToDouble follows the
+            // ambient culture and permits group separators, and .NET does not check the digit
+            // grouping — so on a culture that groups with '.', "1.5" came back as fifteen. A
+            // German user asking for 1.5 feet of text got 15, silently, written to the family
+            // type and saved to their settings. The regex above only ever admits '.' as a
+            // decimal point, so invariant parsing is the correct reading of what it matched.
+            //
+            // TryParse rather than Parse: input like "1.2.3" matches the regex but is not a
+            // number, and returning the failure indicator puts it in front of the user as an
+            // unreadable height instead of throwing into a swallowed catch.
+            double feet = 0;
+            if (m.Groups["feet"].Success &&
+                !double.TryParse(m.Groups["feet"].Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out feet))
+            {
+                return 0;
+            }
+
             int inch = m.Groups["inch"].Success ? Convert.ToInt32(m.Groups["inch"].Value) : 0;
             int sixt = m.Groups["sixt"].Success ? Convert.ToInt32(m.Groups["sixt"].Value) : 0;
             int numer = m.Groups["numer"].Success ? Convert.ToInt32(m.Groups["numer"].Value) : 0;
