@@ -41,6 +41,12 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
         /// asked is not this tool's business. Their text is now wrong, which is worth saying.
         /// </summary>
         public int OrphanedTags { get; set; }
+
+        /// <summary>
+        /// Duplicate-instance warnings hidden because this run placed tags on top of its own
+        /// previous ones. Only ever non-zero with updating turned off.
+        /// </summary>
+        public int SuppressedDuplicateWarnings { get; set; }
     }
 
     public class ThreeDeeRoomTagModel
@@ -293,6 +299,84 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
                 .Where(f => f.Symbol.Family.Name.Contains(TagFamilyName)).ToList();
         }
 
+        /// <summary>
+        /// A whole run: the family type's text height, and the tags, as one thing.
+        ///
+        /// The two used to be separate committed transactions with nothing tying them
+        /// together, so a run that reported "Nothing was placed" had already changed the
+        /// family type's text height and left it changed. A successful run also arrived as two
+        /// undo entries, and the first Ctrl+Z took back only the tags.
+        ///
+        /// A TransactionGroup makes the pair atomic and, assimilated, a single undo step.
+        /// </summary>
+        /// <param name="textHeightInches">
+        /// The height to apply, or zero or less to leave the family's own alone.
+        /// </param>
+        public TaggingResult RunTagging(
+            FamilySymbol spatialElementTag,
+            ObservableCollection<SpatialElement> spatialElements,
+            bool updateExisting,
+            RevitLinkInstance linkInstance,
+            double textHeightInches)
+        {
+            using (var group = new TransactionGroup(Doc, "Create / update 3d spatial tags"))
+            {
+                group.Start();
+
+                try
+                {
+                    ApplyTextHeight(spatialElementTag, textHeightInches);
+
+                    var result = CreateRoomTags(spatialElementTag, spatialElements, updateExisting, linkInstance);
+
+                    // The family could not hold what this tool writes, so the tagging
+                    // transaction rolled itself back. The height change goes with it: reporting
+                    // that nothing was placed while having quietly resized the family type is
+                    // the partial mutation this group exists to prevent.
+                    if (result.MissingParameter != null)
+                    {
+                        group.RollBack();
+                        return result;
+                    }
+
+                    group.Assimilate();
+
+                    return result;
+                }
+                catch (Exception)
+                {
+                    group.RollBack();
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Pushes the requested text height onto the tag family type, if one was asked for and
+        /// the family can take it. A family without the parameter is not a failure worth
+        /// stopping the run over — the tags are still correct, they are just the size the
+        /// family already was.
+        /// </summary>
+        private void ApplyTextHeight(FamilySymbol famSymb, double inches)
+        {
+            if (inches <= 0) return;
+
+            var param = famSymb.LookupParameter(TextHeightParameter);
+
+            if (param is null || param.IsReadOnly || param.StorageType != StorageType.Double) return;
+
+            double feet = inches / 12;
+
+            if (Math.Abs(param.AsDouble() - feet) < 1e-9) return;
+
+            using (Transaction t = new Transaction(Doc, "Setting Tag Height"))
+            {
+                t.Start();
+                param.Set(feet);
+                t.Commit();
+            }
+        }
+
         public TaggingResult CreateRoomTags(FamilySymbol spatialElementTag, ObservableCollection<SpatialElement> spatialElements, bool updateExisting = true, RevitLinkInstance linkInstance = null)
         {
             var result = new TaggingResult();
@@ -391,10 +475,16 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
                     result.Tags.Add(roomTagInstance);
                 }
 
-                // Set failure handler to hide identical instances warnings which may be posted.
+                // Suppress the duplicate-instance warning for tags this run stacked on its own
+                // previous ones — which is what "place a fresh set every time" means — and
+                // nothing else. The preprocessor is given the ids it is allowed to silence.
+                var preprocessor = new HideOverlappingElementWarning(result.Tags.Select(tag => tag.Id));
+
                 FailureHandlingOptions failureOptions = t.GetFailureHandlingOptions();
-                failureOptions.SetFailuresPreprocessor(new HideOverlappingElementWarning());
+                failureOptions.SetFailuresPreprocessor(preprocessor);
                 t.Commit(failureOptions);
+
+                result.SuppressedDuplicateWarnings = preprocessor.SuppressedDuplicateWarnings;
             }
 
             return result;

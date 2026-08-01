@@ -83,32 +83,19 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             var vm = ViewModel;
             if (vm is null) return;
 
-            var index = this.TargetComboBox.SelectedIndex;
-
-            if (index < 0) return;
-
-            Properties.Settings.Default.TargetIndex = index;
-            Properties.Settings.Default.Save();
-
-            vm.TitleText = index == 0 ? "3d Room Tags" : "3d Space Tags";
-
-            // Rooms and spaces are different elements in different categories, so whatever was
-            // collected for the old target says nothing about the new one.
+            // Clearing the phase is a view concern — it is this control's own selection. What
+            // that means for the saved setting, the window title and the collected elements is
+            // the view model's, and lives there.
             this.PhaseComboBox.SelectedIndex = -1;
-            vm.ClearCollectedElements();
+
+            vm.ChangeTarget(this.TargetComboBox.SelectedIndex);
         }
 
         private void FamilySymbolSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!IsLoaded) return;
 
-            var index = this.FamilySymbolComboBox.SelectedIndex;
-
-            // -1 is "nothing chosen", not a position worth remembering for the next document.
-            if (index < 0) return;
-
-            Properties.Settings.Default.FamilySymbolIndex = index;
-            Properties.Settings.Default.Save();
+            ViewModel?.ChangeFamilySymbol(this.FamilySymbolComboBox.SelectedIndex);
         }
     }
 }

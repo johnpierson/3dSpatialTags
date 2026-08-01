@@ -72,6 +72,44 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             get => _targetIndex;
             set { _targetIndex = value; OnPropertyChanged(nameof(TargetIndex)); }
         }
+
+        /// <summary>
+        /// Records which target the user chose, and everything that follows from it.
+        ///
+        /// Rooms and spaces are different elements in different categories, so whatever was
+        /// collected for the old target says nothing about the new one and is dropped. The
+        /// view used to do all of this itself — write the setting, derive the title, clear the
+        /// collection — which left two owners for one piece of state and the title updating
+        /// only if the user went through that particular handler.
+        /// </summary>
+        public void ChangeTarget(int index)
+        {
+            if (index < 0) return;
+
+            TargetIndex = index;
+            TitleText = TitleFor(index);
+
+            Properties.Settings.Default.TargetIndex = index;
+            Properties.Settings.Default.Save();
+
+            ClearCollectedElements();
+        }
+
+        /// <summary>
+        /// Records the chosen tag family type so the next document opens on it. -1 is "nothing
+        /// chosen", not a position worth remembering.
+        /// </summary>
+        public void ChangeFamilySymbol(int index)
+        {
+            if (index < 0) return;
+
+            FamilySymbolIndex = index;
+
+            Properties.Settings.Default.FamilySymbolIndex = index;
+            Properties.Settings.Default.Save();
+        }
+
+        private static string TitleFor(int targetIndex) => targetIndex == 0 ? "3d Room Tags" : "3d Space Tags";
         private bool _updateExisting;
         public bool UpdateExisting
         {
@@ -206,7 +244,7 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             TextHeightString = Properties.Settings.Default.TextHeight;
 
             TargetIndex = Properties.Settings.Default.TargetIndex;
-            TitleText = TargetIndex == 0 ? "3d Room Tags" : "3d Space Tags";
+            TitleText = TitleFor(TargetIndex);
             UpdateExisting = true;
             InProgress = false;
             FromLink = false;
@@ -357,9 +395,17 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             {
                 var link = FromLink ? SelectedLink : null;
 
-                ApplyTextHeight(spatialElementTag);
+                TextHeight = ParseTextHeight(TextHeightString);
 
-                var result = Model.CreateRoomTags(spatialElementTag, SpatialElements, UpdateExisting, link);
+                // Remembered for next time only when it is a height this tool could read.
+                // Saving an unreadable one would hand the same error back on every launch.
+                if (TextHeight > 0)
+                {
+                    Properties.Settings.Default.TextHeight = TextHeightString;
+                    Properties.Settings.Default.Save();
+                }
+
+                var result = Model.RunTagging(spatialElementTag, SpatialElements, UpdateExisting, link, TextHeight);
 
                 if (result.MissingParameter != null)
                 {
@@ -406,52 +452,6 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             finally
             {
                 InProgress = false;
-            }
-        }
-
-        /// <summary>
-        /// Pushes the requested text height onto the tag family type, if one was asked for and the
-        /// family can take it. A family without the parameter is not a failure worth stopping the
-        /// run over — the tags are still correct, they are just the size the family already was.
-        /// </summary>
-        private void ApplyTextHeight(FamilySymbol famSymb)
-        {
-            TextHeight = ParseTextHeight(TextHeightString);
-
-            if (TextHeight <= 0)
-            {
-                return;
-            }
-
-            Properties.Settings.Default.TextHeight = TextHeightString;
-            Properties.Settings.Default.Save();
-
-            var param = famSymb.LookupParameter(ThreeDeeRoomTagModel.TextHeightParameter);
-
-            if (param is null || param.IsReadOnly || param.StorageType != StorageType.Double)
-            {
-                return;
-            }
-
-            double feet = TextHeight / 12;
-
-            if (Math.Abs(param.AsDouble() - feet) < 1e-9)
-            {
-                return;
-            }
-
-            using (Transaction t = new Transaction(Model.Doc, "Setting Tag Height"))
-            {
-                t.Start();
-                try
-                {
-                    param.Set(feet);
-                    t.Commit();
-                }
-                catch (Exception)
-                {
-                    t.RollBack();
-                }
             }
         }
 
