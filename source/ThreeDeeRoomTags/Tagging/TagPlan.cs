@@ -55,6 +55,15 @@ namespace ThreeDeeRoomTags.Tagging
         /// <summary>Identifies the element this tag is for. Matched against a tag's stored id.</summary>
         public string SourceId { get; set; }
 
+        /// <summary>
+        /// The link instance this element was read through, or null for a host element. Part of
+        /// the identity because two instances of one linked file hand back the same element ids.
+        /// </summary>
+        public string LinkInstanceId { get; set; }
+
+        /// <summary>The element and the link instance together — what a tag records.</summary>
+        public TagSourceIdentity Identity => new TagSourceIdentity(SourceId, LinkInstanceId);
+
         public string Name { get; set; }
         public string Number { get; set; }
 
@@ -77,10 +86,19 @@ namespace ThreeDeeRoomTags.Tagging
     {
         public string TagId { get; set; }
 
-        /// <summary>The source id written on the tag, or null if it carries none.</summary>
+        /// <summary>The value written on the tag, or null if it carries none.</summary>
         public string StoredSourceId { get; set; }
 
         public bool IsEditable { get; set; }
+
+        /// <summary>
+        /// Whether the element this tag names has been deleted from the document it came from.
+        ///
+        /// Answered by the caller, because it takes a document lookup — and answered only for
+        /// tags in the scope currently being tagged. A tag for a room in another phase has not
+        /// been orphaned just because this run is not about it.
+        /// </summary>
+        public bool SourceMissing { get; set; }
     }
 
     /// <summary>One decision, for one element.</summary>
@@ -93,5 +111,23 @@ namespace ThreeDeeRoomTags.Tagging
         public string ExistingTagId { get; set; }
 
         public SkipReason Reason { get; set; }
+
+        /// <summary>
+        /// Whether this update adopts a tag written before link instances were part of the
+        /// identity. The tag is rewritten with the full identity, so it only happens once.
+        /// </summary>
+        public bool IsLegacyMigration { get; set; }
+    }
+
+    /// <summary>Everything a run intends to do, and what it noticed on the way.</summary>
+    internal sealed class TagRunPlan
+    {
+        public List<TagOperation> Operations { get; set; } = new List<TagOperation>();
+
+        /// <summary>
+        /// Tags whose spatial element no longer exists. Counted and reported, not deleted:
+        /// removing elements from somebody's model is not something to do without being asked.
+        /// </summary>
+        public int OrphanedTagCount { get; set; }
     }
 }

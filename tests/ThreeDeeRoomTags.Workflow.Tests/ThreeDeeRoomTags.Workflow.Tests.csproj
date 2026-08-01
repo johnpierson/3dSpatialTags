@@ -45,6 +45,7 @@
     <ItemGroup>
         <Compile Include="..\..\source\ThreeDeeRoomTags\Utilities\StringUtils.cs" Link="Linked\StringUtils.cs" />
         <Compile Include="..\..\source\ThreeDeeRoomTags\Tagging\TagPlan.cs" Link="Linked\TagPlan.cs" />
+        <Compile Include="..\..\source\ThreeDeeRoomTags\Tagging\TagSourceIdentity.cs" Link="Linked\TagSourceIdentity.cs" />
         <Compile Include="..\..\source\ThreeDeeRoomTags\Tagging\TagPlanner.cs" Link="Linked\TagPlanner.cs" />
     </ItemGroup>
 

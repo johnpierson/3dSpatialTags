@@ -27,6 +27,20 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
         /// whole rather than leaving half a model tagged with blanks.
         /// </summary>
         public string MissingParameter { get; set; }
+
+        /// <summary>
+        /// Tags written before the link instance was part of a tag's identity, adopted by this
+        /// run and rewritten with it. Reported because it explains a one-off run where tags
+        /// were updated rather than created, and because it only ever happens once.
+        /// </summary>
+        public int MigratedLegacyTags { get; set; }
+
+        /// <summary>
+        /// Tags whose spatial element has been deleted. Reported rather than removed: the tag
+        /// is still model geometry in somebody's project, and deleting elements without being
+        /// asked is not this tool's business. Their text is now wrong, which is worth saying.
+        /// </summary>
+        public int OrphanedTags { get; set; }
     }
 
     public class ThreeDeeRoomTagModel
@@ -195,7 +209,7 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
         /// Reads a spatial element into the plain data the planner works on, applying the link
         /// transform on the way so that everything downstream is in host coordinates.
         /// </summary>
-        private static SpatialElementSnapshot Snapshot(SpatialElement spatialElement, Transform transform)
+        private static SpatialElementSnapshot Snapshot(SpatialElement spatialElement, Transform transform, string linkInstanceId)
         {
             var location = spatialElement.Location as LocationPoint;
             var point = location?.Point;
@@ -208,6 +222,7 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             return new SpatialElementSnapshot
             {
                 SourceId = spatialElement.UniqueId,
+                LinkInstanceId = linkInstanceId,
                 Name = spatialElement.get_Parameter(BuiltInParameter.ROOM_NAME)?.AsString(),
                 Number = spatialElement.get_Parameter(BuiltInParameter.ROOM_NUMBER)?.AsString(),
                 IsPlaced = location != null,
@@ -220,15 +235,56 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
         /// Reads an existing tag into plain data. The editability question is asked here, once
         /// per tag, rather than in the middle of placing things.
         /// </summary>
-        private static ExistingTagSnapshot Snapshot(FamilyInstance tag) => new ExistingTagSnapshot
+        /// <param name="sourceDoc">
+        /// The document the current run reads elements from, used to notice tags whose element
+        /// has been deleted. Null when it cannot be reached, in which case no tag is called an
+        /// orphan — an unreachable document is not evidence that anything is gone.
+        /// </param>
+        /// <param name="linkInstanceId">The link instance being tagged, or null for the host.</param>
+        private static ExistingTagSnapshot Snapshot(FamilyInstance tag, Document sourceDoc, string linkInstanceId)
         {
-            TagId = tag.UniqueId,
-
             // Null-safe: a tag whose id parameter was removed or never filled in reads back as
             // null, and comparing against it threw.
-            StoredSourceId = tag.LookupParameter(SpatialElementIdParameter)?.AsString(),
-            IsEditable = tag.IsElementEditable()
-        };
+            var stored = tag.LookupParameter(SpatialElementIdParameter)?.AsString();
+
+            return new ExistingTagSnapshot
+            {
+                TagId = tag.UniqueId,
+                StoredSourceId = stored,
+                IsEditable = tag.IsElementEditable(),
+                SourceMissing = IsSourceMissing(stored, sourceDoc, linkInstanceId)
+            };
+        }
+
+        /// <summary>
+        /// Whether a tag names an element that is no longer in the document it came from.
+        ///
+        /// Deliberately narrow. Only tags belonging to the scope being tagged are considered,
+        /// because a tag for a room in another phase, or read through a different link
+        /// instance, has not been orphaned just because this run is not about it — calling it
+        /// one would report a number that frightens people about nothing.
+        /// </summary>
+        private static bool IsSourceMissing(string stored, Document sourceDoc, string linkInstanceId)
+        {
+            if (sourceDoc is null) return false;
+            if (!TagSourceIdentity.TryParse(stored, out var identity, out var isLegacy)) return false;
+
+            // A legacy tag carries no link instance, so there is no way to tell which scope it
+            // belongs to. Left alone rather than guessed at.
+            if (isLegacy && linkInstanceId != null) return false;
+
+            if (!string.Equals(identity.LinkInstanceId, linkInstanceId, StringComparison.Ordinal)) return false;
+
+            try
+            {
+                return sourceDoc.GetElement(identity.SourceId) is null;
+            }
+            catch (Exception)
+            {
+                // A malformed id is not proof of a deleted element.
+                return false;
+            }
+        }
 
         private List<FamilyInstance> CollectExistingTags()
         {
@@ -243,7 +299,12 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
 
             List<FamilyInstance> existingTags = updateExisting ? CollectExistingTags() : new List<FamilyInstance>();
 
-            var transform = linkInstance?.GetTransform();
+            // GetTotalTransform, not GetTransform: a link nested inside another link is placed
+            // by the composition of both, and its own transform alone would put the tags in
+            // the wrong place. The two are identical for a directly placed link.
+            var transform = linkInstance?.GetTotalTransform();
+            var linkInstanceId = linkInstance?.UniqueId;
+            var sourceDoc = linkInstance is null ? Doc : linkInstance.GetLinkDocument();
 
             // Decided in full before the transaction opens, so that what the run intends to do
             // is a value that can be inspected and tested rather than a shape that only exists
@@ -252,9 +313,11 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             var tagsById = existingTags.ToDictionary(t => t.UniqueId, t => t, StringComparer.Ordinal);
 
             var plan = TagPlanner.Plan(
-                spatialElements.Select(s => Snapshot(s, transform)).ToList(),
-                existingTags.Select(Snapshot).ToList(),
+                spatialElements.Select(s => Snapshot(s, transform, linkInstanceId)).ToList(),
+                existingTags.Select(t => Snapshot(t, sourceDoc, linkInstanceId)).ToList(),
                 updateExisting);
+
+            result.OrphanedTags = plan.OrphanedTagCount;
 
             using (Transaction t = new Transaction(Doc, "Placing 3d spatial element tags"))
             {
@@ -265,7 +328,7 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
                     spatialElementTag.Activate();
                 }
 
-                foreach (var operation in plan)
+                foreach (var operation in plan.Operations)
                 {
                     if (operation.Kind == TagOperationKind.Skip)
                     {
@@ -293,6 +356,8 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
                         {
                             tagLocation.Point = spatialElementPoint;
                         }
+
+                        if (operation.IsLegacyMigration) result.MigratedLegacyTags++;
                     }
                     else
                     {
@@ -317,7 +382,11 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
 
                     roomTagInstance.LookupParameter(NameParameter).Set(source.Name);
                     roomTagInstance.LookupParameter(NumberParameter).Set(source.Number);
-                    roomTagInstance.LookupParameter(SpatialElementIdParameter).Set(spatialElement.UniqueId);
+
+                    // The element AND the link instance it came from. A tag adopted from the
+                    // old bare-id format is rewritten here, so the next run matches it exactly
+                    // and a second placement of the same link no longer finds it to steal.
+                    roomTagInstance.LookupParameter(SpatialElementIdParameter).Set(source.Identity.ToStoredValue());
 
                     result.Tags.Add(roomTagInstance);
                 }

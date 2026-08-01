@@ -368,12 +368,33 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
                     return;
                 }
 
-                FlyOutText = $"{result.Tags.Count} tags created or updated.";
+                var summary = $"{result.Tags.Count} tags created or updated.";
+
+                if (result.MigratedLegacyTags > 0)
+                {
+                    summary += $" {result.MigratedLegacyTags} of them were tags from an earlier version, "
+                               + "now recorded against the link they came from.";
+                }
+
+                FlyOutText = summary;
                 FlyOutVisibility = true;
 
-                ErrorText = result.SkippedNotEditable > 0
-                    ? $"{result.SkippedNotEditable} existing tags are owned by another user or out of date, so they were left alone."
-                    : string.Empty;
+                // Both are worth saying, and a run can produce both at once, so neither is
+                // allowed to hide the other.
+                var notes = new List<string>();
+
+                if (result.SkippedNotEditable > 0)
+                {
+                    notes.Add($"{result.SkippedNotEditable} existing tags are owned by another user or out of date, so they were left alone.");
+                }
+
+                if (result.OrphanedTags > 0)
+                {
+                    notes.Add($"{result.OrphanedTags} tags are for elements that no longer exist. They still say what they said, "
+                              + "so they are now wrong; delete them yourself if you no longer want them.");
+                }
+
+                ErrorText = string.Join(" ", notes);
             }
             catch (Exception ex)
             {

@@ -1,4 +1,4 @@
-using ThreeDeeRoomTags.Tagging;
+﻿using ThreeDeeRoomTags.Tagging;
 using Xunit;
 
 namespace ThreeDeeRoomTags.Workflow.Tests
@@ -7,7 +7,7 @@ namespace ThreeDeeRoomTags.Workflow.Tests
     /// What a run decides to do, before it does any of it.
     ///
     /// These are the rules that decide whether somebody's model gets a tag, a moved tag, or
-    /// nothing — and until the planner was pulled out of the placement loop, none of them
+    /// nothing â€” and until the planner was pulled out of the placement loop, none of them
     /// could be checked without a running Revit.
     /// </summary>
     public class TagPlannerTests
@@ -17,11 +17,13 @@ namespace ThreeDeeRoomTags.Workflow.Tests
             string name = "Office",
             string number = "101",
             bool placed = true,
-            double area = 120)
+            double area = 120,
+            string link = null)
         {
             return new SpatialElementSnapshot
             {
                 SourceId = id,
+                LinkInstanceId = link,
                 Name = name,
                 Number = number,
                 IsPlaced = placed,
@@ -30,15 +32,24 @@ namespace ThreeDeeRoomTags.Workflow.Tests
             };
         }
 
-        private static ExistingTagSnapshot Tag(string tagId, string storedSourceId, bool editable = true)
+        private static ExistingTagSnapshot Tag(
+            string tagId,
+            string storedSourceId,
+            bool editable = true,
+            bool sourceMissing = false)
         {
             return new ExistingTagSnapshot
             {
                 TagId = tagId,
                 StoredSourceId = storedSourceId,
-                IsEditable = editable
+                IsEditable = editable,
+                SourceMissing = sourceMissing
             };
         }
+
+        /// <summary>What a tag for an element read through a link instance carries.</summary>
+        private static string StoredFor(string sourceId, string link) =>
+            new TagSourceIdentity(sourceId, link).ToStoredValue();
 
         private static List<ExistingTagSnapshot> NoTags() => new List<ExistingTagSnapshot>();
 
@@ -47,7 +58,7 @@ namespace ThreeDeeRoomTags.Workflow.Tests
         {
             var plan = TagPlanner.Plan(new[] { Room("room-1") }, NoTags(), updateExisting: true);
 
-            var operation = Assert.Single(plan);
+            var operation = Assert.Single(plan.Operations);
             Assert.Equal(TagOperationKind.Create, operation.Kind);
             Assert.Equal("room-1", operation.Source.SourceId);
         }
@@ -60,13 +71,13 @@ namespace ThreeDeeRoomTags.Workflow.Tests
                 new[] { Tag("tag-a", "room-1") },
                 updateExisting: true);
 
-            var operation = Assert.Single(plan);
+            var operation = Assert.Single(plan.Operations);
             Assert.Equal(TagOperationKind.Update, operation.Kind);
             Assert.Equal("tag-a", operation.ExistingTagId);
         }
 
         /// <summary>
-        /// With updating off, the dialog promises "a fresh set every time" — so a matching tag
+        /// With updating off, the dialog promises "a fresh set every time" â€” so a matching tag
         /// is not adopted even though one exists.
         /// </summary>
         [Fact]
@@ -77,7 +88,7 @@ namespace ThreeDeeRoomTags.Workflow.Tests
                 new[] { Tag("tag-a", "room-1") },
                 updateExisting: false);
 
-            Assert.Equal(TagOperationKind.Create, Assert.Single(plan).Kind);
+            Assert.Equal(TagOperationKind.Create, Assert.Single(plan.Operations).Kind);
         }
 
         /// <summary>
@@ -93,7 +104,7 @@ namespace ThreeDeeRoomTags.Workflow.Tests
                 new[] { Tag("tag-a", "room-1", editable: false) },
                 updateExisting: true);
 
-            var operation = Assert.Single(plan);
+            var operation = Assert.Single(plan.Operations);
             Assert.Equal(TagOperationKind.Skip, operation.Kind);
             Assert.Equal(SkipReason.NotEditable, operation.Reason);
         }
@@ -103,7 +114,7 @@ namespace ThreeDeeRoomTags.Workflow.Tests
         {
             var plan = TagPlanner.Plan(new[] { Room("room-1", placed: false) }, NoTags(), updateExisting: true);
 
-            var operation = Assert.Single(plan);
+            var operation = Assert.Single(plan.Operations);
             Assert.Equal(TagOperationKind.Skip, operation.Kind);
             Assert.Equal(SkipReason.NotPlaced, operation.Reason);
         }
@@ -122,7 +133,7 @@ namespace ThreeDeeRoomTags.Workflow.Tests
                 NoTags(),
                 updateExisting: true);
 
-            var operation = Assert.Single(plan);
+            var operation = Assert.Single(plan.Operations);
             Assert.Equal(TagOperationKind.Skip, operation.Kind);
             Assert.Equal(SkipReason.MissingNameOrNumber, operation.Reason);
         }
@@ -140,7 +151,7 @@ namespace ThreeDeeRoomTags.Workflow.Tests
                 NoTags(),
                 updateExisting: true);
 
-            Assert.Equal(SkipReason.NotPlaced, Assert.Single(plan).Reason);
+            Assert.Equal(SkipReason.NotPlaced, Assert.Single(plan.Operations).Reason);
         }
 
         /// <summary>
@@ -155,7 +166,7 @@ namespace ThreeDeeRoomTags.Workflow.Tests
                 new[] { Tag("tag-a", null), Tag("tag-b", "") },
                 updateExisting: true);
 
-            Assert.Equal(TagOperationKind.Create, Assert.Single(plan).Kind);
+            Assert.Equal(TagOperationKind.Create, Assert.Single(plan.Operations).Kind);
         }
 
         /// <summary>
@@ -170,7 +181,7 @@ namespace ThreeDeeRoomTags.Workflow.Tests
                 new[] { Tag("tag-first", "room-1"), Tag("tag-second", "room-1") },
                 updateExisting: true);
 
-            Assert.Equal("tag-first", Assert.Single(plan).ExistingTagId);
+            Assert.Equal("tag-first", Assert.Single(plan.Operations).ExistingTagId);
         }
 
         [Fact]
@@ -187,17 +198,17 @@ namespace ThreeDeeRoomTags.Workflow.Tests
                 new[] { Tag("tag-c", "room-3") },
                 updateExisting: true);
 
-            Assert.Equal(4, plan.Count);
-            Assert.Equal(TagOperationKind.Create, plan[0].Kind);
-            Assert.Equal(SkipReason.NotPlaced, plan[1].Reason);
-            Assert.Equal(TagOperationKind.Update, plan[2].Kind);
-            Assert.Equal(SkipReason.MissingNameOrNumber, plan[3].Reason);
+            Assert.Equal(4, plan.Operations.Count);
+            Assert.Equal(TagOperationKind.Create, plan.Operations[0].Kind);
+            Assert.Equal(SkipReason.NotPlaced, plan.Operations[1].Reason);
+            Assert.Equal(TagOperationKind.Update, plan.Operations[2].Kind);
+            Assert.Equal(SkipReason.MissingNameOrNumber, plan.Operations[3].Reason);
         }
 
         /// <summary>
         /// An unbounded or redundant room reports zero area but is placed and carries the name
         /// and number Revit assigned it, so it is tagged. The dialog's warning says these
-        /// "cannot be tagged", which is not what happens — pinned here so the two are settled
+        /// "cannot be tagged", which is not what happens â€” pinned here so the two are settled
         /// deliberately rather than drifting apart again.
         /// </summary>
         [Fact]
@@ -205,14 +216,197 @@ namespace ThreeDeeRoomTags.Workflow.Tests
         {
             var plan = TagPlanner.Plan(new[] { Room("room-1", area: 0) }, NoTags(), updateExisting: true);
 
-            Assert.Equal(TagOperationKind.Create, Assert.Single(plan).Kind);
+            Assert.Equal(TagOperationKind.Create, Assert.Single(plan.Operations).Kind);
+        }
+
+        // ------------------------------------------------------------------------------
+        // Source identity: the defect this whole change exists for.
+        // ------------------------------------------------------------------------------
+
+        /// <summary>
+        /// REGRESSION, finding TAG-01.
+        ///
+        /// One linked file placed twice. Both placements hand back the same room, with the
+        /// same element id, because they share one link document. Tagging the second used to
+        /// find the first's tags and drag them across — leaving the first placement untagged,
+        /// on every run, with nothing reported.
+        /// </summary>
+        [Fact]
+        public void DoesNotStealTheTagsOfAnotherPlacementOfTheSameLink()
+        {
+            var plan = TagPlanner.Plan(
+                new[] { Room("room-1", link: "link-B") },
+                new[] { Tag("tag-for-A", StoredFor("room-1", "link-A")) },
+                updateExisting: true);
+
+            var operation = Assert.Single(plan.Operations);
+            Assert.Equal(TagOperationKind.Create, operation.Kind);
+            Assert.Null(operation.ExistingTagId);
+        }
+
+        [Fact]
+        public void UpdatesTheTagBelongingToItsOwnLinkInstance()
+        {
+            var plan = TagPlanner.Plan(
+                new[] { Room("room-1", link: "link-B") },
+                new[]
+                {
+                    Tag("tag-for-A", StoredFor("room-1", "link-A")),
+                    Tag("tag-for-B", StoredFor("room-1", "link-B"))
+                },
+                updateExisting: true);
+
+            Assert.Equal("tag-for-B", Assert.Single(plan.Operations).ExistingTagId);
+        }
+
+        /// <summary>
+        /// A host element and a linked element that happen to share an id are still two
+        /// different things. This is the same guarantee as above, from the other direction.
+        /// </summary>
+        [Fact]
+        public void AHostElementDoesNotMatchALinkedTag()
+        {
+            var plan = TagPlanner.Plan(
+                new[] { Room("room-1") },
+                new[] { Tag("tag-linked", StoredFor("room-1", "link-A")) },
+                updateExisting: true);
+
+            Assert.Equal(TagOperationKind.Create, Assert.Single(plan.Operations).Kind);
+        }
+
+        // ------------------------------------------------------------------------------
+        // Migrating tags written before the link instance was part of the identity.
+        // ------------------------------------------------------------------------------
+
+        /// <summary>
+        /// Every tag in every model in the wild carries the bare element id. A linked run
+        /// adopts one rather than placing a duplicate on top of it — otherwise upgrading would
+        /// hand every existing user a second set of tags.
+        /// </summary>
+        [Fact]
+        public void AdoptsALegacyTagForALinkedElementAndMarksItMigrated()
+        {
+            var plan = TagPlanner.Plan(
+                new[] { Room("room-1", link: "link-A") },
+                new[] { Tag("tag-legacy", "room-1") },
+                updateExisting: true);
+
+            var operation = Assert.Single(plan.Operations);
+            Assert.Equal(TagOperationKind.Update, operation.Kind);
+            Assert.Equal("tag-legacy", operation.ExistingTagId);
+            Assert.True(operation.IsLegacyMigration);
+        }
+
+        /// <summary>
+        /// A host tag's stored form has not changed, so adopting one is just an ordinary
+        /// update — nothing is being migrated and the user should not be told it was.
+        /// </summary>
+        [Fact]
+        public void AdoptingAHostTagIsNotAMigration()
+        {
+            var plan = TagPlanner.Plan(
+                new[] { Room("room-1") },
+                new[] { Tag("tag-a", "room-1") },
+                updateExisting: true);
+
+            Assert.False(Assert.Single(plan.Operations).IsLegacyMigration);
+        }
+
+        /// <summary>
+        /// The upgrade path, end to end. There is one legacy tag and the same link is placed
+        /// twice; only one placement can honestly claim it, and the other gets its own tag
+        /// rather than fighting over it.
+        /// </summary>
+        [Fact]
+        public void OnlyOnePlacementCanClaimASingleLegacyTag()
+        {
+            var plan = TagPlanner.Plan(
+                new[]
+                {
+                    Room("room-1", link: "link-A"),
+                    Room("room-1", link: "link-B")
+                },
+                new[] { Tag("tag-legacy", "room-1") },
+                updateExisting: true);
+
+            Assert.Equal(2, plan.Operations.Count);
+            Assert.Equal(TagOperationKind.Update, plan.Operations[0].Kind);
+            Assert.True(plan.Operations[0].IsLegacyMigration);
+            Assert.Equal(TagOperationKind.Create, plan.Operations[1].Kind);
+        }
+
+        [Fact]
+        public void DoesNotAdoptALegacyTagTwiceInOneRun()
+        {
+            var plan = TagPlanner.Plan(
+                new[]
+                {
+                    Room("room-1", link: "link-A"),
+                    Room("room-1", link: "link-A")
+                },
+                new[] { Tag("tag-legacy", "room-1") },
+                updateExisting: true);
+
+            Assert.Equal(1, plan.Operations.Count(o => o.Kind == TagOperationKind.Update));
+            Assert.Equal(1, plan.Operations.Count(o => o.Kind == TagOperationKind.Create));
+        }
+
+        // ------------------------------------------------------------------------------
+        // Tags whose element is gone.
+        // ------------------------------------------------------------------------------
+
+        /// <summary>
+        /// Finding TAG-02. A deleted room leaves its tag behind, still saying what it said, as
+        /// model geometry that gets exported into coordination models. Counted so the user is
+        /// told; not deleted, because removing elements uninvited is not this tool's business.
+        /// </summary>
+        [Fact]
+        public void CountsTagsWhoseElementIsGone()
+        {
+            var plan = TagPlanner.Plan(
+                new[] { Room("room-1") },
+                new[]
+                {
+                    Tag("tag-a", "room-1"),
+                    Tag("tag-gone", "room-deleted", sourceMissing: true),
+                    Tag("tag-also-gone", "room-also-deleted", sourceMissing: true)
+                },
+                updateExisting: true);
+
+            Assert.Equal(2, plan.OrphanedTagCount);
+        }
+
+        /// <summary>
+        /// A tag this run just updated has a live element in front of it, whatever the caller
+        /// said — belt and braces against reporting a number that would badly mislead.
+        /// </summary>
+        [Fact]
+        public void DoesNotCountATagItJustAdoptedAsAnOrphan()
+        {
+            var plan = TagPlanner.Plan(
+                new[] { Room("room-1") },
+                new[] { Tag("tag-a", "room-1", sourceMissing: true) },
+                updateExisting: true);
+
+            Assert.Equal(0, plan.OrphanedTagCount);
+        }
+
+        [Fact]
+        public void ReportsNoOrphansWhenNothingIsMissing()
+        {
+            var plan = TagPlanner.Plan(
+                new[] { Room("room-1") },
+                new[] { Tag("tag-a", "room-1"), Tag("tag-b", "room-2") },
+                updateExisting: true);
+
+            Assert.Equal(0, plan.OrphanedTagCount);
         }
 
         [Fact]
         public void ReturnsNothingForNoElements()
         {
-            Assert.Empty(TagPlanner.Plan(new SpatialElementSnapshot[0], NoTags(), updateExisting: true));
-            Assert.Empty(TagPlanner.Plan(null, NoTags(), updateExisting: true));
+            Assert.Empty(TagPlanner.Plan(new SpatialElementSnapshot[0], NoTags(), updateExisting: true).Operations);
+            Assert.Empty(TagPlanner.Plan(null, NoTags(), updateExisting: true).Operations);
         }
     }
 }
