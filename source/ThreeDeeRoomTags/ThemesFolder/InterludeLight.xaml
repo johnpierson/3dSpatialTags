@@ -539,10 +539,17 @@
                   <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
+                <!--
+                    SelectionBoxItemTemplate is what draws the closed box, and WPF fills it from
+                    ItemTemplate/ItemTemplateSelector only — never from DisplayMemberPath. A combo
+                    box here therefore needs an ItemTemplate, or the closed box falls back to the
+                    item's ToString.
+                -->
                 <ContentPresenter x:Name="ContentSite"
                                   Grid.Column="0"
                                   Content="{TemplateBinding SelectionBoxItem}"
                                   ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                  ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
                                   Margin="{TemplateBinding Padding}"
                                   VerticalAlignment="Center"
                                   IsHitTestVisible="False" />

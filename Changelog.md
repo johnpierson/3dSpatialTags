@@ -1,5 +1,9 @@
 # 1.2.0
 
+- Added support for Revit 2027, which runs on .NET 10.
+- Fixed the Phase and link drop-downs showing `Autodesk.Revit.DB.Phase` instead of the phase or
+  link name.
+
 - Redrew the dialog in Interlude's light theme: cream ground, heavy outlines, hard shadows, one
   accent, and Space Grotesk embedded so it looks the same everywhere. The custom dark title bar is
   gone; the window uses Windows' own.

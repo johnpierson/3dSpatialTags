@@ -142,14 +142,27 @@
                                           IsEnabled="{Binding HasLinks, FallbackValue=False}"
                                           Checked="ToggleButton_OnChecked"
                                           Unchecked="ToggleButton_OnChecked" />
+                                <!--
+                                    An ItemTemplate rather than DisplayMemberPath. The two are
+                                    equivalent in the drop-down list, but the closed box draws
+                                    SelectionBoxItemTemplate, which WPF derives from ItemTemplate
+                                    alone — with only a DisplayMemberPath set it renders whatever
+                                    the item's ToString gives, and a Revit element's is its type
+                                    name.
+                                -->
                                 <ComboBox Name="LinkComboBox"
                                           Margin="0,8,0,0"
                                           HorizontalAlignment="Stretch"
                                           SelectedIndex="{Binding LinkIndex, Mode=TwoWay}"
                                           ItemsSource="{Binding Links}"
-                                          DisplayMemberPath="Name"
                                           Visibility="{Binding FromLink, Converter={StaticResource b2v}}"
-                                          SelectionChanged="Link_OnSelectionChanged" />
+                                          SelectionChanged="Link_OnSelectionChanged">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Name}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
                             </StackPanel>
                         </Grid>
 
@@ -165,8 +178,13 @@
                                       Name="PhaseComboBox"
                                       HorizontalAlignment="Stretch"
                                       ItemsSource="{Binding Phases}"
-                                      DisplayMemberPath="Name"
-                                      SelectionChanged="Selector_OnSelectionChanged" />
+                                      SelectionChanged="Selector_OnSelectionChanged">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                         </Grid>
 
                         <Grid Style="{StaticResource FieldRow}">
