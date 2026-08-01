@@ -85,15 +85,29 @@ With Codex, start a change with `/opsx:propose <description>`, implement it with
 
 | Folder     | Description                                             |
 |------------|---------------------------------------------------------|
-| Classes    | Global constants and application logic                  |
-| Models     | Revit API interaction and data processing               |
-| ViewModels | MVVM Logic and UI binding commands                      |
-| Views      | XAML-based user interface                               |
-| Resources  | Embedded assets and tag families                        |
-| Utils      | String parsing and geometry helpers                      |
+| Classes      | Global constants and application logic                  |
+| Models       | Revit API interaction and data processing               |
+| ViewModels   | MVVM Logic and UI binding commands                      |
+| Views        | XAML-based user interface                               |
+| ThemesFolder | The Interlude light theme the dialog is drawn in        |
+| Fonts        | Space Grotesk, embedded for the theme                   |
+| Resources    | Embedded assets and tag families                        |
+| Utils        | String parsing and geometry helpers                      |
 
 </details>
+
+## Appearance
+
+The dialog is drawn in the light theme from
+[Interlude](https://github.com/johnpierson/Interlude): cream ground, heavy black outlines, hard
+offset shadows and a single hot-pink accent. The palette, metrics and control styles live in
+`ThemesFolder/InterludeLight.xaml` under the same `Interlude.*` resource keys Interlude uses, so
+the two stay recognisably one design language. Interlude resolves those keys at run time from a
+theme object; this add-in has one dialog and one appearance, so they are written out directly.
 
 ## License
 
 This project is licensed under the **GNU General Public License v3 (GPLv3)**. See the [LICENSE](LICENSE) file for details.
+
+Space Grotesk, embedded in the add-in for the dialog, is licensed under the SIL Open Font License
+1.1 — see [source/ThreeDeeRoomTags/Fonts/SpaceGrotesk-OFL.txt](source/ThreeDeeRoomTags/Fonts/SpaceGrotesk-OFL.txt).

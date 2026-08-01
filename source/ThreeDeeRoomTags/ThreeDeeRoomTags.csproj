@@ -61,9 +61,6 @@
     </ItemGroup>
 
     <ItemGroup>
-
-		<PackageReference Include="Microsoft.Net.Http" Version="2.2.29" />
-
 		<PackageReference Include="Nice3point.Revit.Build.Tasks" Version="2.*" />
         <PackageReference Include="Nice3point.Revit.Toolkit" Version="$(RevitVersion).*" />
         <PackageReference Include="Nice3point.Revit.Extensions" Version="$(RevitVersion).*" />
@@ -71,11 +68,25 @@
         <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitVersion).*" />
         <PackageReference Include="Nice3point.Revit.Api.RevitAddInUtility" Version="$(RevitVersion).*" />
 	    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.*" />
-	    <PackageReference Include="PresentationFramework.Aero2" Version="1.0.1" />
         <PackageReference Include="Serilog" Version="4.*" />
         <PackageReference Include="Serilog.Sinks.Debug" Version="3.*" />
 	    <PackageReference Include="Serilog.Sinks.File" Version="5.*" />
-	    <PackageReference Include="Newtonsoft.Json" Version="13.*" />
+    </ItemGroup>
+
+    <!--
+        Space Grotesk, the face the Interlude theme is drawn in, compiled into this assembly so the
+        dialog looks the same on a machine that has never installed it. These are the STATIC
+        instances rather than the variable font Google Fonts serves: WPF's text stack does not read
+        variable axes, and the variable file renders at a single default weight.
+
+        The OFL requires the licence to travel with the font, hence the text file beside them.
+    -->
+    <ItemGroup>
+      <Resource Include="Fonts\SpaceGrotesk-Regular.ttf" />
+      <Resource Include="Fonts\SpaceGrotesk-Medium.ttf" />
+      <Resource Include="Fonts\SpaceGrotesk-Bold.ttf" />
+      <Resource Include="Fonts\SpaceGrotesk-Light.ttf" />
+      <None Include="Fonts\SpaceGrotesk-OFL.txt" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
     <ItemGroup>
