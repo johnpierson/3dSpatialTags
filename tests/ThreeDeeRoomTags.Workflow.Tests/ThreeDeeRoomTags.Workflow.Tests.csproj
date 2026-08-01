@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <!--
+            Both framework families the add-in ships on, so a defect that only appears under
+            one of them cannot hide. Deliberately NOT -windows and deliberately not
+            per-Revit-version: this project tests logic that does not touch the Revit API,
+            which is the only logic that can be tested without a running Revit.
+        -->
+        <TargetFrameworks>net48;net8.0</TargetFrameworks>
+        <LangVersion>latest</LangVersion>
+        <ImplicitUsings>true</ImplicitUsings>
+        <Nullable>disable</Nullable>
+        <IsPackable>false</IsPackable>
+        <PlatformTarget>x64</PlatformTarget>
+
+        <!--
+            The add-in's own configurations are per Revit version (Debug R20 … Release R27).
+            This project has no Revit dependency, so it maps every one of them onto plain
+            Debug/Release rather than duplicating the matrix.
+        -->
+        <Configurations>Debug;Release</Configurations>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+        <PackageReference Include="xunit" Version="2.9.2" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    </ItemGroup>
+
+    <!--
+        Linked rather than referenced. A ProjectReference to the add-in would drag in the
+        Revit API packages and force this project into the per-version configuration matrix,
+        for the sake of one file that only uses System.Text.RegularExpressions. Compiling the
+        source in directly also makes its internal types visible to the tests.
+
+        The rule for what belongs here: a file may be linked only if it has no Revit API
+        dependency. If linking one starts requiring Revit types, that is the signal to extract
+        the logic rather than to add a reference.
+    -->
+    <ItemGroup>
+        <Compile Include="..\..\source\ThreeDeeRoomTags\Utilities\StringUtils.cs" Link="Linked\StringUtils.cs" />
+    </ItemGroup>
+
+</Project>
