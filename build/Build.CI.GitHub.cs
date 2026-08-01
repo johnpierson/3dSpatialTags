@@ -11,6 +11,12 @@ sealed partial class Build
         .Requires(() => GitHubToken)
         .Requires(() => GitRepository)
         .OnlyWhenStatic(() => IsServerBuild && GitRepository.IsOnMainOrMasterBranch())
+
+        // Skipped rather than failed when this version has already shipped. Every push to
+        // main runs this target, and most of them are docs or spec edits that do not bump
+        // Version — asserting there would leave main permanently red and train everyone to
+        // ignore it. Publishing happens on the push that bumps Version, and only then.
+        .OnlyWhenDynamic(() => !ReleaseTagExists())
         .Executes(async () =>
         {
             GitHubTasks.GitHubClient = new GitHubClient(new ProductHeaderValue(Solution.Name))
@@ -38,14 +44,42 @@ sealed partial class Build
             await UploadArtifactsAsync(release, artifacts);
         });
 
+    /// <summary>
+    /// Whether a tag for the current <see cref="Version"/> already exists.
+    ///
+    /// Asked with `git tag -l` rather than `git describe`: describe with --always answers
+    /// with an abbreviated commit hash when the clone carries no tags, and comparing that
+    /// hash to a version string never matches — which is how the duplicate-release guard
+    /// silently did nothing on a shallow CI checkout.
+    /// </summary>
+    bool ReleaseTagExists()
+    {
+        var tags = GitTasks.Git($"tag -l {Version}", logInvocation: false, logOutput: false);
+        var exists = tags.Any(tag => tag.Text.Trim() == Version);
+
+        if (exists) Log.Information("Release {Version} already exists; skipping publish", Version);
+
+        return exists;
+    }
+
     void ValidateRelease()
     {
-        var tags = GitTasks.Git("describe --tags --abbrev=0 --always", logInvocation: false, logOutput: false);
-        var latestTag = tags.First().Text;
-        if (latestTag == GitRepository.Commit) return;
-
-        Assert.False(latestTag == Version, $"A Release with the specified tag already exists in the repository: {Version}");
+        Assert.False(ReleaseTagExists(), $"A Release with the specified tag already exists in the repository: {Version}");
         Log.Information("Version: {Version}", Version);
+    }
+
+    /// <summary>
+    /// The most recent tag reachable from HEAD, or null when the clone carries no tags at
+    /// all. Distinguished explicitly rather than relying on `--always` falling back to a
+    /// commit hash, which reads as a tag to every caller downstream.
+    /// </summary>
+    static string LatestTagOrNull()
+    {
+        var tags = GitTasks.Git("tag -l", logInvocation: false, logOutput: false);
+        if (!tags.Any(tag => !string.IsNullOrWhiteSpace(tag.Text))) return null;
+
+        var described = GitTasks.Git("describe --tags --abbrev=0", logInvocation: false, logOutput: false);
+        return described.FirstOrDefault().Text?.Trim();
     }
 
     static async Task UploadArtifactsAsync(Release release, IEnumerable<string> artifacts)
@@ -87,11 +121,12 @@ sealed partial class Build
 
     void WriteCompareUrl(StringBuilder changelog)
     {
-        var tags = GitTasks.Git("describe --tags --abbrev=0 --always", logInvocation: false, logOutput: false);
-        var latestTag = tags.First().Text;
-        if (latestTag == GitRepository.Commit) return;
+        var latestTag = LatestTagOrNull();
 
-        if (changelog[^1] != '\r' || changelog[^1] != '\n') changelog.AppendLine(Environment.NewLine);
+        // Nothing to compare against on the first release, or on a clone without tags.
+        if (latestTag is null || latestTag == Version) return;
+
+        if (changelog[^1] != '\r' && changelog[^1] != '\n') changelog.AppendLine(Environment.NewLine);
         changelog.Append("Full changelog: ");
         changelog.Append(GitRepository.GetGitHubCompareTagsUrl(Version, latestTag));
     }
