@@ -7,7 +7,7 @@ namespace ThreeDeeRoomTags.Workflow.Tests
     /// What a run decides to do, before it does any of it.
     ///
     /// These are the rules that decide whether somebody's model gets a tag, a moved tag, or
-    /// nothing â€” and until the planner was pulled out of the placement loop, none of them
+    /// nothing — and until the planner was pulled out of the placement loop, none of them
     /// could be checked without a running Revit.
     /// </summary>
     public class TagPlannerTests
@@ -36,12 +36,14 @@ namespace ThreeDeeRoomTags.Workflow.Tests
             string tagId,
             string storedSourceId,
             bool editable = true,
-            bool sourceMissing = false)
+            bool sourceMissing = false,
+            string sourceLinkInstanceId = null)
         {
             return new ExistingTagSnapshot
             {
                 TagId = tagId,
                 StoredSourceId = storedSourceId,
+                SourceLinkInstanceId = sourceLinkInstanceId,
                 IsEditable = editable,
                 SourceMissing = sourceMissing
             };
@@ -77,7 +79,7 @@ namespace ThreeDeeRoomTags.Workflow.Tests
         }
 
         /// <summary>
-        /// With updating off, the dialog promises "a fresh set every time" â€” so a matching tag
+        /// With updating off, the dialog promises "a fresh set every time" — so a matching tag
         /// is not adopted even though one exists.
         /// </summary>
         [Fact]
@@ -208,7 +210,7 @@ namespace ThreeDeeRoomTags.Workflow.Tests
         /// <summary>
         /// An unbounded or redundant room reports zero area but is placed and carries the name
         /// and number Revit assigned it, so it is tagged. The dialog's warning says these
-        /// "cannot be tagged", which is not what happens â€” pinned here so the two are settled
+        /// "cannot be tagged", which is not what happens — pinned here so the two are settled
         /// deliberately rather than drifting apart again.
         /// </summary>
         [Fact]
@@ -269,6 +271,43 @@ namespace ThreeDeeRoomTags.Workflow.Tests
             var plan = TagPlanner.Plan(
                 new[] { Room("room-1") },
                 new[] { Tag("tag-linked", StoredFor("room-1", "link-A")) },
+                updateExisting: true);
+
+            Assert.Equal(TagOperationKind.Create, Assert.Single(plan.Operations).Kind);
+        }
+
+        /// <summary>
+        /// Matching reads the family's own link-instance parameter, so a tag identified purely
+        /// by what a schedule would show still resolves to its own placement.
+        /// </summary>
+        [Fact]
+        public void MatchesOnTheFamilyLinkParameterWhenItIsSet()
+        {
+            var plan = TagPlanner.Plan(
+                new[] { Room("room-1", link: "link-B") },
+                new[]
+                {
+                    Tag("tag-for-A", "room-1", sourceLinkInstanceId: "link-A"),
+                    Tag("tag-for-B", "room-1", sourceLinkInstanceId: "link-B")
+                },
+                updateExisting: true);
+
+            var operation = Assert.Single(plan.Operations);
+            Assert.Equal(TagOperationKind.Update, operation.Kind);
+            Assert.Equal("tag-for-B", operation.ExistingTagId);
+            Assert.False(operation.IsLegacyMigration);
+        }
+
+        /// <summary>
+        /// A tag whose family records a different placement is not a legacy tag going spare,
+        /// even though its composite value is a bare id.
+        /// </summary>
+        [Fact]
+        public void DoesNotMigrateATagThatAlreadyNamesAnotherPlacement()
+        {
+            var plan = TagPlanner.Plan(
+                new[] { Room("room-1", link: "link-B") },
+                new[] { Tag("tag-for-A", "room-1", sourceLinkInstanceId: "link-A") },
                 updateExisting: true);
 
             Assert.Equal(TagOperationKind.Create, Assert.Single(plan.Operations).Kind);

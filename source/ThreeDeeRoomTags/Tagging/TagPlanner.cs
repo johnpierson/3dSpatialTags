@@ -148,15 +148,18 @@ namespace ThreeDeeRoomTags.Tagging
 
             foreach (var tag in existingTags)
             {
-                if (tag is null || string.IsNullOrEmpty(tag.StoredSourceId)) continue;
+                if (tag is null) continue;
+                if (!TagSourceIdentity.TryResolve(tag.StoredSourceId, tag.SourceLinkInstanceId, out var identity, out _)) continue;
 
-                if (!index.ContainsKey(tag.StoredSourceId)) index.Add(tag.StoredSourceId, tag);
+                var key = identity.ToStoredValue();
+
+                if (!index.ContainsKey(key)) index.Add(key, tag);
             }
 
             return index;
         }
 
-        /// <summary>Tags carrying a bare element id, keyed by it.</summary>
+        /// <summary>Tags carrying a bare element id and nothing else, keyed by it.</summary>
         private static Dictionary<string, ExistingTagSnapshot> IndexLegacyBySourceId(IReadOnlyList<ExistingTagSnapshot> existingTags)
         {
             var index = new Dictionary<string, ExistingTagSnapshot>(StringComparer.Ordinal);
@@ -166,7 +169,7 @@ namespace ThreeDeeRoomTags.Tagging
             foreach (var tag in existingTags)
             {
                 if (tag is null) continue;
-                if (!TagSourceIdentity.TryParse(tag.StoredSourceId, out var identity, out var isLegacy)) continue;
+                if (!TagSourceIdentity.TryResolve(tag.StoredSourceId, tag.SourceLinkInstanceId, out var identity, out var isLegacy)) continue;
                 if (!isLegacy) continue;
 
                 if (!index.ContainsKey(identity.SourceId)) index.Add(identity.SourceId, tag);

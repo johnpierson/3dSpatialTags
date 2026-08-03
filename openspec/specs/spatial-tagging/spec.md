@@ -43,6 +43,16 @@ The add-in SHALL identify a tag's source by both the spatial element and the lin
 - **WHEN** a linked document is placed twice and a user tags each placement in turn
 - **THEN** each placement receives and keeps its own tags, and tagging one does not move or re-point the other's
 
+#### Scenario: Record the source in the family's own parameters
+
+- **WHEN** the selected tag family carries `SourceDocumentId` and `SourceLinkInstanceId` parameters
+- **THEN** the add-in writes the source document and link instance to them, so the identity can be scheduled and filtered in Revit
+
+#### Scenario: Tag with a family that predates those parameters
+
+- **WHEN** the selected tag family has no `SourceDocumentId` or `SourceLinkInstanceId` parameter
+- **THEN** the add-in still creates and updates tags, recording the identity in `SpatialElementId` alone
+
 #### Scenario: Adopt a tag written before source identity existed
 
 - **WHEN** a tag carries only a bare spatial element id and a user tags a link containing that element
@@ -60,7 +70,17 @@ The add-in SHALL make the bundled `3dSpatialElementTag` family available when no
 #### Scenario: Load the bundled family
 
 - **WHEN** the tag dialog opens and no family containing `3dSpatialElementTag` is loaded
-- **THEN** the add-in loads the installed or embedded family resource and offers its symbols for selection
+- **THEN** the add-in loads its embedded family resource and offers its symbols for selection
+
+#### Scenario: Load a family the running Revit can open
+
+- **WHEN** the add-in loads its bundled family
+- **THEN** the family loaded is the one built for the running Revit version, not one saved by a newer Revit
+
+#### Scenario: Ignore an unexpected family file beside the assembly
+
+- **WHEN** an `.rfa` is present in the add-in's installation directory
+- **THEN** the add-in does not load it in preference to its own embedded family
 
 ### Requirement: Tag creation
 

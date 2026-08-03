@@ -28,10 +28,15 @@ Anything you can write a test for there, write it there: it is the only part of 
 that can be checked without opening Revit. CI runs them on every push and pull request.
 
 Build the configurations affected by the change. At minimum, changes shared by all supported
-versions should be checked against one .NET Framework target, one .NET 8 target and one .NET 10
-target — `Release R24`, `Release R26` and `Release R27` — when the required Revit SDK assemblies
-are available. Note that a **Debug** build publishes into `%AppData%\Autodesk\Revit\Addins\`,
-so building a Debug configuration replaces your installed add-in.
+versions should be checked against one .NET 8 target and the .NET 10 target — `Release R26` and
+`Release R27` — when the required Revit SDK assemblies are available. Note that a **Debug**
+build publishes into `%AppData%\Autodesk\Revit\Addins\`, so building a Debug configuration
+replaces your installed add-in.
+
+Each configuration embeds its own year's tag family from `revit/<year>/`. Adding a Revit version
+means adding a family for it there as well as the configuration pair — a family saved in a newer
+Revit will not load in an older one, which is why there is one per version rather than one
+shared.
 
 Revit API and WPF behavior also requires manual validation. Record the Revit version, fixture
 file, host or linked-document setup, and observed result in the change tasks and pull request.

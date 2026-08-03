@@ -86,8 +86,14 @@ namespace ThreeDeeRoomTags.Tagging
     {
         public string TagId { get; set; }
 
-        /// <summary>The value written on the tag, or null if it carries none.</summary>
+        /// <summary>The composite value written on the tag, or null if it carries none.</summary>
         public string StoredSourceId { get; set; }
+
+        /// <summary>
+        /// The link instance recorded in the family's own parameter, where it has one. Empty or
+        /// null on a host tag, and on any tag written before that parameter existed.
+        /// </summary>
+        public string SourceLinkInstanceId { get; set; }
 
         public bool IsEditable { get; set; }
 

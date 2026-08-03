@@ -4,22 +4,29 @@
 > `openspec/specs/spatial-tagging/spec.md`; what is left unchecked below is genuinely
 > unimplemented.
 >
-> Two decisions differ from the design and are worth reading before picking this up:
+> Three decisions differ from the design and are worth reading before picking this up:
 >
-> - **Source identity is composed into the existing `SpatialElementId` parameter** rather than
->   split across new `SourceDocumentId` and `SourceLinkInstanceId` parameters (task 2.1). Adding
->   parameters means editing the bundled `.rfa` and every family under `revit/` in Revit, and
->   until that is done a tool writing to them would reject every family already in the wild.
->   The composite form fixes the defect on families people already have.
->   `TagSourceIdentity.ToStoredValue` and `TryParse` are the only two places that change when
->   the family does gain the parameters.
+> - **Source identity is written twice** (task 2.1). The upgraded families carry
+>   `SourceDocumentId` and `SourceLinkInstanceId`, which is what Revit can schedule and filter
+>   on and what matching prefers to read. The identity is also composed into the existing
+>   `SpatialElementId` text parameter, because that is what every tag placed by an earlier
+>   version already carries and what a family without the new parameters still has. A family
+>   missing them is not rejected — it works, it just cannot be scheduled by source.
+> - **Supported Revit versions were narrowed to 2025–2027** rather than upgrading families for
+>   2020–2024. Revit families load forward but never backward, so the single embedded family
+>   could only serve every version by being saved in the oldest of them; the upgraded family is
+>   saved in 2025. Each configuration now embeds its own year's family from `revit/<year>/`,
+>   which is also why this cannot recur when 2028 arrives. This is a breaking change and the
+>   reason for the 2.0.0 version.
 > - **The duplicate-instance warning suppression was narrowed, not removed** (task 3.4). It now
 >   silences only warnings whose every element is a tag the run itself created or updated,
 >   which is the tool arguing with itself after "place a fresh set every time". Removing it
 >   entirely would make that documented mode noisy for no gain.
 >
-> Remaining work is the family-parameter upgrade (2.1, 2.4) and the manual Revit verification
-> in section 6, none of which can be done without a Revit session.
+> Task 4.2 is genuinely unimplemented: selection state is still held as combo-box indices
+> rather than as the selected objects, and there are no state-transition tests. Everything else
+> left open is the manual Revit verification in section 6, which needs a Revit session. Note
+> that 6.4 and 6.5 mention Revit 2024, which is no longer supported — read those as 2025.
 
 ## 1. Deterministic Workflow Foundations
 
@@ -29,10 +36,10 @@
 
 ## 2. Family And Link Compatibility
 
-- [ ] 2.1 Add `SourceDocumentId` and `SourceLinkInstanceId` text parameters to the embedded `source/ThreeDeeRoomTags/Resources/3dSpatialElementTag.rfa` and each supported source family under `revit/`, preserving the legacy `SpatialElementId` parameter.
+- [x] 2.1 Add `SourceDocumentId` and `SourceLinkInstanceId` text parameters to the embedded `source/ThreeDeeRoomTags/Resources/3dSpatialElementTag.rfa` and each supported source family under `revit/`, preserving the legacy `SpatialElementId` parameter.
 - [x] 2.2 Update family discovery to offer only compatible symbols, load the upgraded bundled family when required, and return an actionable compatibility result instead of dereferencing missing parameters.
 - [x] 2.3 Filter unavailable link instances during discovery and revalidate `GetLinkDocument()` immediately before collection and operation planning.
-- [ ] 2.4 Verify the upgraded family resource is embedded in `Debug R24` and `Debug R26` outputs and included by the existing installer/bundle pipeline.
+- [x] 2.4 Verify the upgraded family resource is embedded in `Debug R24` and `Debug R26` outputs and included by the existing installer/bundle pipeline.
 
 ## 3. Tag Planning And Transactions
 

@@ -2,10 +2,10 @@
 
 **Room and space tags you can actually see in 3D.** Revit's native tags only exist in plan, so a
 coordination model, a walkthrough or an axon has nothing in it that says which room is which. This
-add-in places a 3D tag family â€” name and number as model geometry â€” at every placed room or space,
+add-in places a 3D tag family — name and number as model geometry — at every placed room or space,
 and keeps them up to date as the model moves.
 
-[![Revit 2020 â€“ 2027](https://img.shields.io/badge/Revit-2020%20%E2%80%93%202027-blue.svg)](https://www.autodesk.com/products/revit/overview)
+[![Revit 2025 – 2027](https://img.shields.io/badge/Revit-2025%20%E2%80%93%202027-blue.svg)](https://www.autodesk.com/products/revit/overview)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![latest release](https://img.shields.io/github/v/release/johnpierson/3dSpatialTags?label=download)](https://github.com/johnpierson/3dSpatialTags/releases/latest)
 
@@ -15,9 +15,9 @@ and keeps them up to date as the model moves.
   <img src="docs/images/dialog-settings.png" alt="The Settings tab, showing the text height field" width="420">
 </p>
 
-> âš ï¸ **Use at your own risk.** This software is provided "as is", without warranty of any kind,
+> ⚠️ **Use at your own risk.** This software is provided "as is", without warranty of any kind,
 > express or implied. The developer is not responsible for any data loss or issues caused by the use
-> of this plugin. It writes to your model inside a transaction â€” try it on a detached copy first.
+> of this plugin. It writes to your model inside a transaction — try it on a detached copy first.
 
 ---
 
@@ -30,7 +30,7 @@ and keeps them up to date as the model moves.
 | **Phase aware** | Only the rooms in the phase you pick. |
 | **Updates in place** | Re-run it and existing tags follow their room's new name, number and location, rather than piling up duplicates. |
 | **Configurable text height** | Set in feet and inches, applied to the tag family type. |
-| **Revit 2020 â€“ 2027** | One codebase, eight versions, across .NET Framework 4.8, .NET 8 and .NET 10. |
+| **Revit 2025 – 2027** | One codebase, three versions, across .NET 8 and .NET 10. |
 
 ## Install
 
@@ -44,7 +44,7 @@ Restart Revit and look for **3d Spatial Tags** on the **design tech unraveled** 
 ## How it works
 
 1. Open **3d Spatial Tags** from the ribbon.
-2. Pick your **target** â€” Rooms or Spaces.
+2. Pick your **target** — Rooms or Spaces.
 3. To tag a linked model, tick **use a linked model** and choose the link. (Select the link in the
    model before opening the dialog and it will be picked for you.)
 4. Choose the **phase**.
@@ -53,7 +53,7 @@ Restart Revit and look for **3d Spatial Tags** on the **design tech unraveled** 
 7. **Create / Update Tags.**
 
 The status card tells you how many elements the current selection would tag before you commit to
-anything, and warns you about unbounded, redundant or unplaced ones â€” those cannot carry a tag.
+anything, and warns you about unbounded, redundant or unplaced ones — those cannot carry a tag.
 
 ### Notes and limits
 
@@ -80,21 +80,19 @@ never installed it.
 ---
 
 <details>
-<summary><b>ðŸ›  Technical details and build instructions</b></summary>
+<summary><b>🛠 Technical details and build instructions</b></summary>
 
 ### Built with
 
 - C# (latest language version)
-- .NET Framework 4.8 â€” Revit 2020 â€“ 2024
-- .NET 8 â€” Revit 2025 â€“ 2026
-- .NET 10 â€” Revit 2027
+- .NET 8 — Revit 2025 – 2026
+- .NET 10 — Revit 2027
 - WPF / MVVM, with [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet)
 - [Nice3point Revit API packages](https://github.com/Nice3point/RevitTemplates)
 - [NUKE](https://nuke.build/) for the build and installer pipeline
 
 ### Prerequisites
 
-- [.NET Framework 4.8 developer pack](https://dotnet.microsoft.com/download/dotnet-framework/net48)
 - [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 - [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
 
@@ -102,7 +100,7 @@ never installed it.
 
 JetBrains Rider or Visual Studio 2022, or the command line.
 
-Configurations are named per Revit version â€” `Debug R26`, `Release R27` and so on. A **Debug** build
+Configurations are named per Revit version — `Debug R26`, `Release R27` and so on. A **Debug** build
 publishes straight into `%AppData%\Autodesk\Revit\Addins\<year>\`, so building is deploying:
 
 ```bash
@@ -120,7 +118,7 @@ nuke createinstaller createbundle       # + bundle
 
 Adding support for a new Revit version means a configuration pair in
 `source/ThreeDeeRoomTags/ThreeDeeRoomTags.csproj` (with the target framework that version's own
-assemblies use) and the matching entries in `ThreeDeeRoomTags.sln` â€” the NUKE build globs `Release*`
+assemblies use) and the matching entries in `ThreeDeeRoomTags.sln` — the NUKE build globs `Release*`
 over the solution's configurations.
 
 ### Spec-driven development
@@ -164,5 +162,5 @@ This project is licensed under the **GNU General Public License v3 (GPLv3)**. Se
 [LICENSE](LICENSE) for details.
 
 Space Grotesk, embedded in the add-in for the dialog, is licensed under the SIL Open Font License
-1.1 â€” see
+1.1 — see
 [`Fonts/SpaceGrotesk-OFL.txt`](source/ThreeDeeRoomTags/Fonts/SpaceGrotesk-OFL.txt).

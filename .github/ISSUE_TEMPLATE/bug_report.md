@@ -14,11 +14,6 @@ assignees: ''
 A clear and concise description of what the bug is.
 
 **Revit Version:**
-- [ ] 2020
-- [ ] 2021
-- [ ] 2022
-- [ ] 2023
-- [ ] 2024
 - [ ] 2025
 - [ ] 2026
 - [ ] 2027

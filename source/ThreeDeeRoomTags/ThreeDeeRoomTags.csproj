@@ -6,30 +6,22 @@
         <PlatformTarget>x64</PlatformTarget>
         <ImplicitUsings>true</ImplicitUsings>
         <PublishAddinFiles>true</PublishAddinFiles>
-        <Configurations>Debug R20;Debug R21;Debug R22;Debug R23;Debug R24;Debug R25;Debug R26;Debug R27</Configurations>
-        <Configurations>$(Configurations);Release R20;Release R21;Release R22;Release R23;Release R24;Release R25;Release R26;Release R27</Configurations>
+        <Configurations>Debug R25;Debug R26;Debug R27</Configurations>
+        <Configurations>$(Configurations);Release R25;Release R26;Release R27</Configurations>
     </PropertyGroup>
 
-    <PropertyGroup Condition="$(Configuration.Contains('R20'))">
-        <RevitVersion>2020</RevitVersion>
-        <TargetFramework>net48</TargetFramework>
-    </PropertyGroup>
-    <PropertyGroup Condition="$(Configuration.Contains('R21'))">
-        <RevitVersion>2021</RevitVersion>
-        <TargetFramework>net48</TargetFramework>
-    </PropertyGroup>
-    <PropertyGroup Condition="$(Configuration.Contains('R22'))">
-        <RevitVersion>2022</RevitVersion>
-        <TargetFramework>net48</TargetFramework>
-    </PropertyGroup>
-    <PropertyGroup Condition="$(Configuration.Contains('R23'))">
-        <RevitVersion>2023</RevitVersion>
-        <TargetFramework>net48</TargetFramework>
-    </PropertyGroup>
-    <PropertyGroup Condition="$(Configuration.Contains('R24'))">
-        <RevitVersion>2024</RevitVersion>
-        <TargetFramework>net48</TargetFramework>
-    </PropertyGroup>
+    <!--
+        Revit 2025 and up only, and .NET Framework is gone with them.
+
+        The tag family is what forced this. Revit families load forward but never backward, so
+        one embedded family could only ever serve every supported version by being saved in the
+        oldest of them — and the upgraded family, which carries the source-identity parameters,
+        is saved in 2025. Shipping it to 2020-2024 is not possible, and shipping those versions
+        a family without the parameters means maintaining two identity schemes indefinitely.
+
+        Each configuration now embeds its own year's family from revit/<year>/, so this class of
+        problem cannot come back when 2028 arrives.
+    -->
     <PropertyGroup Condition="$(Configuration.Contains('R25'))">
         <RevitVersion>2025</RevitVersion>
         <TargetFramework>net8.0-windows</TargetFramework>
@@ -64,18 +56,23 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <None Remove="Resources\3dSpatialElementTag.rfa" />
       <None Remove="Resources\DesignTechUnraveledMark_512x383.png" />
       <None Remove="Resources\rise.3dRoomTags_32.png" />
     </ItemGroup>
 
     <!--
-        The tag family is embedded once, through FamilySymbols.resx, which is the copy
-        LoadFamily actually reads. It used to also be included as a raw EmbeddedResource, so
-        827 KB of it shipped twice in every assembly, for eight Revit versions, in both MSIs
-        and the bundle — and nothing ever read the second copy.
+        This configuration's own tag family, from revit/<year>/, under a fixed manifest name so
+        the code does not have to know which year it was built for.
+
+        It used to be one file in Resources/ embedded into every configuration, which only
+        worked because it was saved in an old enough format to load everywhere — and which made
+        upgrading the family impossible without either dropping old Revit versions or leaving
+        them on a different identity scheme. Sourcing it per version costs nothing: each build
+        embeds exactly one family, the one it is for.
     -->
     <ItemGroup>
+      <EmbeddedResource Include="..\..\revit\$(RevitVersion)\3dSpatialElementTag.rfa"
+                        LogicalName="ThreeDeeRoomTags.Resources.3dSpatialElementTag.rfa" />
       <EmbeddedResource Include="Resources\rise.3dRoomTags_32.png" />
     </ItemGroup>
 
@@ -139,23 +136,11 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="Properties\FamilySymbols.Designer.cs">
-        <DesignTime>True</DesignTime>
-        <AutoGen>True</AutoGen>
-        <DependentUpon>FamilySymbols.resx</DependentUpon>
-      </Compile>
       <Compile Update="Properties\Settings.Designer.cs">
         <DesignTimeSharedInput>True</DesignTimeSharedInput>
         <AutoGen>True</AutoGen>
         <DependentUpon>Settings.settings</DependentUpon>
       </Compile>
-    </ItemGroup>
-
-    <ItemGroup>
-      <EmbeddedResource Update="Properties\FamilySymbols.resx">
-        <Generator>ResXFileCodeGenerator</Generator>
-        <LastGenOutput>FamilySymbols.Designer.cs</LastGenOutput>
-      </EmbeddedResource>
     </ItemGroup>
 
     <ItemGroup>

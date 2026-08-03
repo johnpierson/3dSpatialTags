@@ -1,5 +1,17 @@
-# 1.3.0
+# 2.0.0
 
+**Revit 2020 – 2024 are no longer supported.** If you are on one of those, stay on 1.2.0; it
+keeps working and nothing about it has changed.
+
+The reason is the tag family. Revit families load forward but never backward, so the one family
+embedded in the add-in could only work on every version at once by being saved in the oldest of
+them — which meant it could never be upgraded without leaving older versions behind anyway. The
+family now carries the source of each tag in parameters you can schedule and filter on, and each
+supported Revit version gets its own copy built for it.
+
+- The tag family records `SourceDocumentId` and `SourceLinkInstanceId`, so you can schedule
+  which model and which link placement every tag came from. A family without those parameters
+  still works — it just cannot be scheduled that way.
 - Tags now remember which link instance they came from. A linked file placed more than once
   used to have its placements fight over one set of tags: tagging the second found the first's
   tags and dragged them across, leaving the first untagged on every run, with nothing said

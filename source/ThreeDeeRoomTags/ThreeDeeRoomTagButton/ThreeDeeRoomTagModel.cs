@@ -59,6 +59,18 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
         /// </summary>
         internal const string SpatialElementIdParameter = "SpatialElementId";
 
+        /// <summary>
+        /// Where the tag records its source in a form Revit can schedule and filter on.
+        ///
+        /// Written when the family carries them, and read in preference to the composite value
+        /// above. They are not in <see cref="RequiredTagParameters"/> on purpose: a family
+        /// without them still works, it just cannot be scheduled by source, and rejecting one
+        /// would turn a reporting feature into a hard incompatibility.
+        /// </summary>
+        internal const string SourceDocumentIdParameter = "SourceDocumentId";
+
+        internal const string SourceLinkInstanceIdParameter = "SourceLinkInstanceId";
+
         internal const string NameParameter = "Name";
         internal const string NumberParameter = "Number";
 
@@ -169,47 +181,69 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             return RequiredTagParameters.FirstOrDefault(name => tag.LookupParameter(name) is null);
         }
 
+        /// <summary>The manifest name the build embeds this configuration's family under.</summary>
+        private const string TagFamilyResource = "ThreeDeeRoomTags.Resources.3dSpatialElementTag.rfa";
+
         public bool LoadFamily()
         {
-            string familyPath = string.Empty;
-            string installPath = Path.Combine(Global.ExecutingPath, $"{TagFamilyName}.rfa");
+            // Extracted to a uniquely named file, always, rather than preferring an .rfa found
+            // beside the assembly. Nothing installs one there, so any file at that path came
+            // from somewhere else — and for a MultiUser install "there" is under ProgramData,
+            // where any user on the machine can drop one and have every other user's Revit
+            // silently load it in preference to the family that shipped.
+            string familyPath;
 
-            if (File.Exists(installPath))
+            try
             {
-                familyPath = installPath;
-            }
-            else
-            {
-                try
+                familyPath = Path.Combine(Global.TempPath, $"{TagFamilyName}.{Guid.NewGuid():N}.rfa");
+
+                using (var stream = Global.ExecutingAssembly.GetManifestResourceStream(TagFamilyResource))
                 {
-                    string tempPath = Path.Combine(Global.TempPath, $"{TagFamilyName}.rfa");
-                    File.WriteAllBytes(tempPath, Properties.FamilySymbols._3dSpatialElementTag);
-
-                    if (File.Exists(tempPath))
+                    if (stream is null)
                     {
-                        familyPath = tempPath;
+                        Log.Error("The tag family resource {Resource} is not embedded in this build", TagFamilyResource);
+                        return false;
+                    }
+
+                    using (var file = File.Create(familyPath))
+                    {
+                        stream.CopyTo(file);
                     }
                 }
-                catch (Exception ex)
-                {
-                    // An unwritable temp folder is not something the user can fix from here; the
-                    // dialog reports the missing family instead. The cause goes to the log,
-                    // because "no tag family is loaded" on its own has sent people looking in
-                    // entirely the wrong place.
-                    Log.Warning(ex, "Could not extract the bundled tag family to {TempPath}", Global.TempPath);
-                    return false;
-                }
             }
-
-            if (string.IsNullOrWhiteSpace(familyPath)) return false;
+            catch (Exception ex)
+            {
+                // An unwritable temp folder is not something the user can fix from here; the
+                // dialog reports the missing family instead. The cause goes to the log,
+                // because "no tag family is loaded" on its own has sent people looking in
+                // entirely the wrong place.
+                Log.Warning(ex, "Could not extract the bundled tag family to {TempPath}", Global.TempPath);
+                return false;
+            }
 
             bool result;
 
-            using (Transaction t = new Transaction(Doc, "Loading tag"))
+            try
             {
-                t.Start();
-                result = Doc.LoadFamily(familyPath);
-                t.Commit();
+                using (Transaction t = new Transaction(Doc, "Loading tag"))
+                {
+                    t.Start();
+                    result = Doc.LoadFamily(familyPath);
+                    t.Commit();
+                }
+            }
+            finally
+            {
+                // The extracted copy has served its purpose either way. It used to be written
+                // to a fixed name and left behind on every run.
+                try
+                {
+                    File.Delete(familyPath);
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "Could not remove the extracted tag family {Path}", familyPath);
+                }
             }
 
             return result;
@@ -257,12 +291,15 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             // null, and comparing against it threw.
             var stored = tag.LookupParameter(SpatialElementIdParameter)?.AsString();
 
+            var storedLink = tag.LookupParameter(SourceLinkInstanceIdParameter)?.AsString();
+
             return new ExistingTagSnapshot
             {
                 TagId = tag.UniqueId,
                 StoredSourceId = stored,
+                SourceLinkInstanceId = storedLink,
                 IsEditable = tag.IsElementEditable(),
-                SourceMissing = IsSourceMissing(stored, sourceDoc, linkInstanceId)
+                SourceMissing = IsSourceMissing(stored, storedLink, sourceDoc, linkInstanceId)
             };
         }
 
@@ -274,10 +311,10 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
         /// instance, has not been orphaned just because this run is not about it — calling it
         /// one would report a number that frightens people about nothing.
         /// </summary>
-        private static bool IsSourceMissing(string stored, Document sourceDoc, string linkInstanceId)
+        private static bool IsSourceMissing(string stored, string storedLink, Document sourceDoc, string linkInstanceId)
         {
             if (sourceDoc is null) return false;
-            if (!TagSourceIdentity.TryParse(stored, out var identity, out var isLegacy)) return false;
+            if (!TagSourceIdentity.TryResolve(stored, storedLink, out var identity, out var isLegacy)) return false;
 
             // A legacy tag carries no link instance, so there is no way to tell which scope it
             // belongs to. Left alone rather than guessed at.
@@ -394,6 +431,12 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             var linkInstanceId = linkInstance?.UniqueId;
             var sourceDoc = linkInstance is null ? Doc : linkInstance.GetLinkDocument();
 
+            // Which file the rooms were read out of, recorded so a schedule can say so. The
+            // path is what identifies it to a person; an unsaved document has only a title.
+            var sourceDocumentId = string.IsNullOrWhiteSpace(sourceDoc?.PathName)
+                ? sourceDoc?.Title ?? string.Empty
+                : sourceDoc.PathName;
+
             // Decided in full before the transaction opens, so that what the run intends to do
             // is a value that can be inspected and tested rather than a shape that only exists
             // while a document is being written to.
@@ -475,6 +518,12 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
                     // old bare-id format is rewritten here, so the next run matches it exactly
                     // and a second placement of the same link no longer finds it to steal.
                     roomTagInstance.LookupParameter(SpatialElementIdParameter).Set(source.Identity.ToStoredValue());
+
+                    // The same identity again, split into the parameters the family carries for
+                    // it, where Revit can schedule and filter on it. Set only if the family has
+                    // them: an older family is still perfectly usable without.
+                    roomTagInstance.LookupParameter(SourceLinkInstanceIdParameter)?.Set(source.LinkInstanceId ?? string.Empty);
+                    roomTagInstance.LookupParameter(SourceDocumentIdParameter)?.Set(sourceDocumentId);
 
                     result.Tags.Add(roomTagInstance);
                 }

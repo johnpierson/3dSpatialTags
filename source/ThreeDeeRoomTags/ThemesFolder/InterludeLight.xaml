@@ -4,7 +4,7 @@
     Interlude (github.com/johnpierson/Interlude) resolves this at run time from a ThemeDefinition:
     a palette, a set of metrics, and a stack of control styles that read both through
     DynamicResource. This add-in has one dialog and one appearance, so the resolution is done here
-    instead â€” the keys keep Interlude's names and values so the two stay recognisably the same UI,
+    instead — the keys keep Interlude's names and values so the two stay recognisably the same UI,
     and so a change over there is a search-and-replace over here.
 
     The values below are Interlude's default theme (ThemeDefinition.Default) resolved for light:
@@ -16,7 +16,7 @@
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
   <!-- ==================================================================================
-       Palette â€” Interlude's ThemePalette.Neo.
+       Palette — Interlude's ThemePalette.Neo.
        ================================================================================== -->
 
   <SolidColorBrush x:Key="Interlude.Background" Color="#FFF4E0" />
@@ -35,8 +35,8 @@
   <SolidColorBrush x:Key="Interlude.AccentForeground" Color="#000000" />
   <!--
       Error and Warning are darker than Interlude's own signal colours, and deliberately so.
-      They carry the two messages in this dialog a user most needs to be able to read â€” the
-      unbounded-rooms warning and every failure line â€” and both are set small: the warning at
+      They carry the two messages in this dialog a user most needs to be able to read — the
+      unbounded-rooms warning and every failure line — and both are set small: the warning at
       13px, every error line at 11px. At those sizes WCAG AA asks for 4.5:1.
 
       Interlude's #FF8A00 measures 2.36:1 on the white status card and 2.17:1 on the cream
@@ -560,7 +560,7 @@
 
                 <!--
                     SelectionBoxItemTemplate is what draws the closed box, and WPF fills it from
-                    ItemTemplate/ItemTemplateSelector only â€” never from DisplayMemberPath. A combo
+                    ItemTemplate/ItemTemplateSelector only — never from DisplayMemberPath. A combo
                     box here therefore needs an ItemTemplate, or the closed box falls back to the
                     item's ToString.
                 -->
@@ -939,7 +939,7 @@
 
   <!--
       The window itself. Interlude leaves the operating system's title bar alone and themes only
-      the client area â€” a custom caption is one more thing to get wrong on a high-DPI multi-monitor
+      the client area — a custom caption is one more thing to get wrong on a high-DPI multi-monitor
       Revit session, and it buys nothing the palette does not already give.
   -->
   <Style x:Key="Interlude.Window" TargetType="{x:Type Window}">

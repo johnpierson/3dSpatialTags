@@ -13,14 +13,11 @@ namespace ThreeDeeRoomTags.Tagging
     /// their stored form is the bare element id, which is exactly what tags carried before —
     /// so every existing host tag still matches itself and nothing has to be migrated.
     ///
-    /// A note on where this lives. The accepted design (openspec design.md) puts the two extra
-    /// values in their own family parameters, SourceDocumentId and SourceLinkInstanceId. That
-    /// needs the bundled .rfa and every family under revit/ to be edited in Revit and
-    /// re-embedded, and until that happens a tool that wrote to those parameters would reject
-    /// every family in the wild for not having them. Composing the identity into the existing
-    /// SpatialElementId text parameter fixes the defect now, on families people already have.
-    /// When the family does gain the parameters, ToStoredValue and TryParse are the only two
-    /// places that need to know.
+    /// The identity is written twice, deliberately. The tag family carries it split across
+    /// SourceDocumentId and SourceLinkInstanceId, where Revit can schedule and filter on it,
+    /// and composed into the SpatialElementId text parameter, which is what matching reads and
+    /// what every tag placed before those parameters existed already carries. Reading prefers
+    /// the split form and falls back to the composite, so a tag from any version resolves.
     /// </summary>
     internal readonly struct TagSourceIdentity : IEquatable<TagSourceIdentity>
     {
@@ -84,6 +81,32 @@ namespace ThreeDeeRoomTags.Tagging
             if (separator <= 0 || separator == body.Length - 1) return false;
 
             identity = new TagSourceIdentity(body.Substring(separator + 1), body.Substring(0, separator));
+            return true;
+        }
+
+        /// <summary>
+        /// The identity a tag records, preferring the parameters the family carries for it and
+        /// falling back to the composite value.
+        ///
+        /// The element id only ever lives in the composite, so that is always parsed; the split
+        /// parameters contribute the link instance. A tag written before those parameters
+        /// existed simply has nothing in them, and resolves from the composite alone.
+        /// </summary>
+        public static bool TryResolve(
+            string storedSourceId,
+            string sourceLinkInstanceId,
+            out TagSourceIdentity identity,
+            out bool isLegacy)
+        {
+            if (!TryParse(storedSourceId, out identity, out isLegacy)) return false;
+
+            if (string.IsNullOrWhiteSpace(sourceLinkInstanceId)) return true;
+
+            // The split parameter wins where the two disagree: it is the one Revit schedules,
+            // so it is the one a user would have seen and trusted.
+            identity = new TagSourceIdentity(identity.SourceId, sourceLinkInstanceId);
+            isLegacy = false;
+
             return true;
         }
 

@@ -6,7 +6,6 @@ context: |
 
   Stack:
   - C# latest, WPF, and CommunityToolkit.Mvvm
-  - .NET Framework 4.8 for Revit 2020-2024
   - .NET 8 Windows for Revit 2025-2026
   - .NET 10 Windows for Revit 2027
   - Autodesk Revit API and Nice3point packages
@@ -19,7 +18,8 @@ context: |
   - build: NUKE build targets
   - install: installer projects
   - revit: versioned Revit family assets
-  - tests/ThreeDeeRoomTags.Workflow.Tests: framework-neutral tests, net48 and net8.0
+  - tests/ThreeDeeRoomTags.Workflow.Tests: framework-neutral tests, net8.0 and net10.0
+  - revit/<year>: the tag family for each supported Revit version, embedded per configuration
   - _testFiles: manual Revit integration fixtures
 
   Engineering constraints:
