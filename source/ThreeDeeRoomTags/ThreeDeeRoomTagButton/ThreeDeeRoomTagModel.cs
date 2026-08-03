@@ -80,7 +80,11 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
         /// <summary>The parameters the bundled tag family carries, and this tool writes.</summary>
         private static readonly string[] RequiredTagParameters = { NameParameter, NumberParameter, SpatialElementIdParameter };
 
-        private const string TagFamilyName = "3dSpatialElementTag";
+        /// <summary>
+        /// The family this tool ships and discovers. Named once, in TagFamilyFile, because it
+        /// is also the extracted file's name — Revit takes the family's name from the file.
+        /// </summary>
+        private const string TagFamilyName = TagFamilyFile.FamilyName;
 
         public UIApplication UiApp { get; }
         public Document Doc { get; }
@@ -202,10 +206,12 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
 
             try
             {
-                familyDirectory = Path.Combine(Global.TempPath, "3dSpatialTags", Guid.NewGuid().ToString("N"));
-                Directory.CreateDirectory(familyDirectory);
+                var token = Guid.NewGuid().ToString("N");
 
-                familyPath = Path.Combine(familyDirectory, $"{TagFamilyName}.rfa");
+                familyDirectory = TagFamilyFile.BuildExtractionDirectory(Global.TempPath, token);
+                familyPath = TagFamilyFile.BuildExtractionPath(Global.TempPath, token);
+
+                Directory.CreateDirectory(familyDirectory);
 
                 using (var stream = Global.ExecutingAssembly.GetManifestResourceStream(TagFamilyResource))
                 {
