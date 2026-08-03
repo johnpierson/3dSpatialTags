@@ -1,13 +1,14 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <RevitAddIns>
   <AddIn Type="Application">
-    <Name>Rise.ThreeDeeRoomTags</Name>
+    <Name>3d Spatial Tags</Name>
     <Assembly>ThreeDeeRoomTags\ThreeDeeRoomTags.dll</Assembly>
     <FullClassName>ThreeDeeRoomTags.AppCommand</FullClassName>
     <ClientId>
 	    86E252D8-F017-4B30-9DA4-EB3E365E44BF
     </ClientId>
 	  <VendorId>Design Tech Unraveled</VendorId>
+    <VendorEmail>https://github.com/johnpierson/3dSpatialTags/issues</VendorEmail>
     <VendorDescription>Design Tech Unraveled, https://github.com/johnpierson/3dSpatialTags/blob/main/LICENSE</VendorDescription>
   </AddIn>
 </RevitAddIns>

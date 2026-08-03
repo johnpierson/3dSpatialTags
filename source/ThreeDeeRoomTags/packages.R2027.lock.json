@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0-windows7.0": {
+      "CommunityToolkit.Mvvm": {
+        "type": "Direct",
+        "requested": "[8.4.2, )",
+        "resolved": "8.4.2",
+        "contentHash": "WadCzGEc2U+3e20avRLng4qNtt4zoOGWrdUISqJWrHe3/FSnrYjuM5Sb4yQb09LhkBXrrI4Zt3dLKgRMbItsrg=="
+      },
+      "Nice3point.Revit.Api.RevitAddInUtility": {
+        "type": "Direct",
+        "requested": "[2027.*, )",
+        "resolved": "2027.2.0",
+        "contentHash": "ri78Fiua7/jZBpeJ1AT14qnDyOIZTCszTTGESvhr8GMGwRqAS63ex1TBte1/jG8KG7bLYWIj1mbr7NDQAPQOaA=="
+      },
+      "Nice3point.Revit.Api.RevitAPI": {
+        "type": "Direct",
+        "requested": "[2027.*, )",
+        "resolved": "2027.2.0",
+        "contentHash": "TZX0givimWzM0Cz3IvtQNXiSpkWXXp21LWo5sPDoF1qkS6WYIXH2vEn9D+mA0JFNWAib0AKfDiINj8afaDXTOg=="
+      },
+      "Nice3point.Revit.Api.RevitAPIUI": {
+        "type": "Direct",
+        "requested": "[2027.*, )",
+        "resolved": "2027.2.0",
+        "contentHash": "2LqIkKAh772P1IZYHnxJFqkSWgbl1XR+xnjvwa9uNTP7v51ua4BiBsqn5hxTuCvnEuWlHyeG960nKS7ZwaFiNw=="
+      },
+      "Nice3point.Revit.Build.Tasks": {
+        "type": "Direct",
+        "requested": "[2.0.2, )",
+        "resolved": "2.0.2",
+        "contentHash": "ordUQs9JHk/oZ+HUhBP6GnD6WRVUH064EEI9kpPJnT7EoqYSXYnS/yCBdDb37mooRsJMmxDxP0M/B69hgJf2sA=="
+      },
+      "Nice3point.Revit.Extensions": {
+        "type": "Direct",
+        "requested": "[2027.*, )",
+        "resolved": "2027.0.3",
+        "contentHash": "5dWaPnzM+qrt2Z1OUXe/DTU70WJoXwqMFWW58h1jb65Kk6wdwhIBzNbmogkNuxPvx4L6MNSUX2lic7CzbnZ0Lw=="
+      },
+      "Nice3point.Revit.Toolkit": {
+        "type": "Direct",
+        "requested": "[2027.*, )",
+        "resolved": "2027.0.0",
+        "contentHash": "kAUZtgXMWZkRJQTacJmUyI17M3iga9iqdnZ6+Frk1ScIkPjlasyXPn6U+xafO4ayH2V3LtBOBgJSxcTzK08ssg=="
+      },
+      "Serilog": {
+        "type": "Direct",
+        "requested": "[4.4.0, )",
+        "resolved": "4.4.0",
+        "contentHash": "ZC6Le3rr4TVJJjS4KsQAesxeF1EhW9qcZmmG7eP5Y2G3+gTGkJEUXkq4+tZNPtyp05I0wWOxnIjwtxFweJsObw=="
+      },
+      "Serilog.Sinks.Debug": {
+        "type": "Direct",
+        "requested": "[3.0.0, )",
+        "resolved": "3.0.0",
+        "contentHash": "4BzXcdrgRX7wde9PmHuYd9U6YqycCC28hhpKonK7hx0wb19eiuRj16fPcPSVp0o/Y1ipJuNLYQ00R3q2Zs8FDA==",
+        "dependencies": {
+          "Serilog": "4.0.0"
+        }
+      },
+      "Serilog.Sinks.File": {
+        "type": "Direct",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "uwV5hdhWPwUH1szhO8PJpFiahqXmzPzJT/sOijH/kFgUx+cyoDTMM8MHD0adw9+Iem6itoibbUXHYslzXsLEAg==",
+        "dependencies": {
+          "Serilog": "2.10.0"
+        }
+      }
+    }
+  }
+}

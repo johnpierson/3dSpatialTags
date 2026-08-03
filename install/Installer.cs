@@ -21,7 +21,9 @@ var project = new Project
     Version = Assembly.GetExecutingAssembly().GetName().Version.ClearRevision(),
     ControlPanelInfo =
     {
-        Manufacturer = Environment.UserName,
+        // A constant, not Environment.UserName. On the build agent that resolved to the
+        // runner account, so released installers named a GitHub runner as their publisher.
+        Manufacturer = "Design Tech Unraveled",
         ProductIcon = @"install\Resources\Icons\ShellIcon.ico"
     }
 };

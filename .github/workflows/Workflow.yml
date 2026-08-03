@@ -3,13 +3,14 @@ name: Workflow
 on:
   push:
     branches:
-      - '**'
+      - main
   pull_request:
     branches:
-      - '!main'
+      - main
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   specifications:
@@ -18,6 +19,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # This job runs a third-party npm package. Leaving the token in .git/config
+          # would hand it to every transitive dependency.
+          persist-credentials: false
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -27,9 +32,26 @@ jobs:
 
   windows:
     name: windows-2022
+    needs: specifications
     runs-on: windows-2022
+    permissions:
+      contents: write
+    concurrency:
+      group: release
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Full history and tags: ValidateRelease and the changelog compare URL both
+          # run `git describe --tags`, which answers with a commit hash on a shallow
+          # clone and silently disables the duplicate-release guard.
+          fetch-depth: 0
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
       - name: Run Nuke build
-        run: ./.nuke/build.cmd Compile PublishGitHub --GitHubToken ${{ secrets.GITHUB_TOKEN }}
+        run: ./.nuke/build.cmd Compile Test PublishGitHub --GitHubToken ${{ secrets.GITHUB_TOKEN }}

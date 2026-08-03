@@ -6,30 +6,22 @@
         <PlatformTarget>x64</PlatformTarget>
         <ImplicitUsings>true</ImplicitUsings>
         <PublishAddinFiles>true</PublishAddinFiles>
-        <Configurations>Debug R20;Debug R21;Debug R22;Debug R23;Debug R24;Debug R25;Debug R26;Debug R27</Configurations>
-        <Configurations>$(Configurations);Release R20;Release R21;Release R22;Release R23;Release R24;Release R25;Release R26;Release R27</Configurations>
+        <Configurations>Debug R25;Debug R26;Debug R27</Configurations>
+        <Configurations>$(Configurations);Release R25;Release R26;Release R27</Configurations>
     </PropertyGroup>
 
-    <PropertyGroup Condition="$(Configuration.Contains('R20'))">
-        <RevitVersion>2020</RevitVersion>
-        <TargetFramework>net48</TargetFramework>
-    </PropertyGroup>
-    <PropertyGroup Condition="$(Configuration.Contains('R21'))">
-        <RevitVersion>2021</RevitVersion>
-        <TargetFramework>net48</TargetFramework>
-    </PropertyGroup>
-    <PropertyGroup Condition="$(Configuration.Contains('R22'))">
-        <RevitVersion>2022</RevitVersion>
-        <TargetFramework>net48</TargetFramework>
-    </PropertyGroup>
-    <PropertyGroup Condition="$(Configuration.Contains('R23'))">
-        <RevitVersion>2023</RevitVersion>
-        <TargetFramework>net48</TargetFramework>
-    </PropertyGroup>
-    <PropertyGroup Condition="$(Configuration.Contains('R24'))">
-        <RevitVersion>2024</RevitVersion>
-        <TargetFramework>net48</TargetFramework>
-    </PropertyGroup>
+    <!--
+        Revit 2025 and up only, and .NET Framework is gone with them.
+
+        The tag family is what forced this. Revit families load forward but never backward, so
+        one embedded family could only ever serve every supported version by being saved in the
+        oldest of them — and the upgraded family, which carries the source-identity parameters,
+        is saved in 2025. Shipping it to 2020-2024 is not possible, and shipping those versions
+        a family without the parameters means maintaining two identity schemes indefinitely.
+
+        Each configuration now embeds its own year's family from revit/<year>/, so this class of
+        problem cannot come back when 2028 arrives.
+    -->
     <PropertyGroup Condition="$(Configuration.Contains('R25'))">
         <RevitVersion>2025</RevitVersion>
         <TargetFramework>net8.0-windows</TargetFramework>
@@ -50,32 +42,63 @@
         <StartArguments>/language ENG</StartArguments>
     </PropertyGroup>
 
-    <ItemGroup>
-      <None Remove="Resources\3dSpatialElementTag.rfa" />
-      <None Remove="Resources\DesignTechUnraveledMark_512x383.png" />
-      <None Remove="Resources\HeaderImage.png" />
-      <None Remove="Resources\HeaderImage.svg" />
-      <None Remove="Resources\logo.ico" />
-      <None Remove="Resources\rise.3dRoomTags_32.png" />
-      <None Remove="Resources\rise.3dRoomTags_50.png" />
-    </ItemGroup>
+    <!--
+        One lock file per Revit version, not the default one per project.
+
+        NuGet keys lock files by target framework, and five of the eight configurations are
+        net48 with different Revit API package versions behind them — they would overwrite
+        each other's entries on every restore. Keying the path on RevitVersion instead gives
+        each configuration a stable, reviewable record of exactly what it resolved.
+    -->
+    <PropertyGroup>
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <NuGetLockFilePath>packages.R$(RevitVersion).lock.json</NuGetLockFilePath>
+    </PropertyGroup>
 
     <ItemGroup>
-      <EmbeddedResource Include="Resources\3dSpatialElementTag.rfa" />
+      <None Remove="Resources\DesignTechUnraveledMark_512x383.png" />
+      <None Remove="Resources\rise.3dRoomTags_32.png" />
+    </ItemGroup>
+
+    <!--
+        This configuration's own tag family, from revit/<year>/, under a fixed manifest name so
+        the code does not have to know which year it was built for.
+
+        It used to be one file in Resources/ embedded into every configuration, which only
+        worked because it was saved in an old enough format to load everywhere — and which made
+        upgrading the family impossible without either dropping old Revit versions or leaving
+        them on a different identity scheme. Sourcing it per version costs nothing: each build
+        embeds exactly one family, the one it is for.
+    -->
+    <ItemGroup>
+      <EmbeddedResource Include="..\..\revit\$(RevitVersion)\3dSpatialElementTag.rfa"
+                        LogicalName="ThreeDeeRoomTags.Resources.3dSpatialElementTag.rfa" />
       <EmbeddedResource Include="Resources\rise.3dRoomTags_32.png" />
     </ItemGroup>
 
+    <!--
+        Every version here was a wildcard, so two builds of the same commit on different days
+        could resolve different dependencies and a published release could not be reproduced.
+
+        The Revit API packages stay parameterized by RevitVersion: their major version IS the
+        Revit year, and the whole per-configuration scheme depends on that substitution. They
+        are pinned to an exact patch by the lock file below rather than by this range.
+
+        Everything else is pinned outright — those are ordinary libraries with no tie to the
+        Revit release, and there is no reason for a new major of Serilog to arrive unannounced
+        in a release build.
+    -->
     <ItemGroup>
-		<PackageReference Include="Nice3point.Revit.Build.Tasks" Version="2.*" />
+        <PackageReference Include="Nice3point.Revit.Build.Tasks" Version="2.0.2" />
         <PackageReference Include="Nice3point.Revit.Toolkit" Version="$(RevitVersion).*" />
         <PackageReference Include="Nice3point.Revit.Extensions" Version="$(RevitVersion).*" />
         <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitVersion).*" />
         <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitVersion).*" />
         <PackageReference Include="Nice3point.Revit.Api.RevitAddInUtility" Version="$(RevitVersion).*" />
-	    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.*" />
-        <PackageReference Include="Serilog" Version="4.*" />
-        <PackageReference Include="Serilog.Sinks.Debug" Version="3.*" />
-	    <PackageReference Include="Serilog.Sinks.File" Version="5.*" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+        <PackageReference Include="Serilog" Version="4.4.0" />
+        <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+        <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     </ItemGroup>
 
     <!--
@@ -94,32 +117,30 @@
       <None Include="Fonts\SpaceGrotesk-OFL.txt" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
+    <!--
+        MIT and Apache-2.0 both require their notices to accompany the binaries. The add-in
+        ships CommunityToolkit.Mvvm, three Serilog assemblies and the Nice3point packages, and
+        until now none of their notices travelled with it.
+    -->
+    <ItemGroup>
+      <None Include="..\..\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <!--
+        Only what the dialog draws. HeaderImage.png, HeaderImage.svg, HeaderImage.xaml,
+        logo.ico and rise.3dRoomTags_50.png were compiled into every assembly and referenced by
+        nothing — the .xaml as a WPF Page, and the .svg in a format WPF cannot render at all.
+    -->
     <ItemGroup>
       <Resource Include="Resources\DesignTechUnraveledMark_512x383.png" />
-      <Resource Include="Resources\HeaderImage.png" />
-      <Resource Include="Resources\HeaderImage.svg" />
-      <Resource Include="Resources\logo.ico" />
-      <Resource Include="Resources\rise.3dRoomTags_50.png" />
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="Properties\FamilySymbols.Designer.cs">
-        <DesignTime>True</DesignTime>
-        <AutoGen>True</AutoGen>
-        <DependentUpon>FamilySymbols.resx</DependentUpon>
-      </Compile>
       <Compile Update="Properties\Settings.Designer.cs">
         <DesignTimeSharedInput>True</DesignTimeSharedInput>
         <AutoGen>True</AutoGen>
         <DependentUpon>Settings.settings</DependentUpon>
       </Compile>
-    </ItemGroup>
-
-    <ItemGroup>
-      <EmbeddedResource Update="Properties\FamilySymbols.resx">
-        <Generator>ResXFileCodeGenerator</Generator>
-        <LastGenOutput>FamilySymbols.Designer.cs</LastGenOutput>
-      </EmbeddedResource>
     </ItemGroup>
 
     <ItemGroup>

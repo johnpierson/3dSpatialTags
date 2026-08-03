@@ -8,9 +8,18 @@
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     </PropertyGroup>
 
+    <!--
+        Pinned rather than floating: this project builds the MSIs users install, and the WiX
+        toolchain is exactly the kind of dependency where a patch bump changes generated
+        output. A lock file records the full graph.
+    -->
+    <PropertyGroup>
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    </PropertyGroup>
+
     <ItemGroup>
-        <PackageReference Include="WixSharp.bin" Version="1.*"/>
-        <PackageReference Include="WixSharp.wix.bin" Version="3.*"/>
+        <PackageReference Include="WixSharp.bin" Version="1.26.0"/>
+        <PackageReference Include="WixSharp.wix.bin" Version="3.14.1"/>
     </ItemGroup>
 
 </Project>

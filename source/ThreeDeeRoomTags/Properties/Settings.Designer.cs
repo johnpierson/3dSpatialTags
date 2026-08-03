@@ -49,30 +49,6 @@ namespace ThreeDeeRoomTags.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string LastPhoneHome {
-            get {
-                return ((string)(this["LastPhoneHome"]));
-            }
-            set {
-                this["LastPhoneHome"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string InstanceId {
-            get {
-                return ((string)(this["InstanceId"]));
-            }
-            set {
-                this["InstanceId"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("2\' 0\"")]
         public string TextHeight {
             get {

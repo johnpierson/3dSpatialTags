@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "dependencies": {
+    ".NETFramework,Version=v4.8": {
+      "WixSharp.bin": {
+        "type": "Direct",
+        "requested": "[1.26.0, )",
+        "resolved": "1.26.0",
+        "contentHash": "Zvo9QhWbIxjRCio01OMXZKTxQwkCYifHkZIWgZLO23KT5biBaEG347b74KM+WL9wVX4Kms6Bf9RT5oP1BT8Mfw=="
+      },
+      "WixSharp.wix.bin": {
+        "type": "Direct",
+        "requested": "[3.14.1, )",
+        "resolved": "3.14.1",
+        "contentHash": "34/tBGeWBtFfqaK/NrfVVx1ZnbTbA5sKQNGeog18XLpGvvqJG+Vgx/MV/OvjCrw++5RDw2W8p17xiuF6722ncw=="
+      }
+    },
+    ".NETFramework,Version=v4.8/win-x64": {}
+  }
+}

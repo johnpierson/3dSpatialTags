@@ -1,11 +1,11 @@
-# 3D Spatial Tags for Revit
+﻿# 3D Spatial Tags for Revit
 
 **Room and space tags you can actually see in 3D.** Revit's native tags only exist in plan, so a
 coordination model, a walkthrough or an axon has nothing in it that says which room is which. This
 add-in places a 3D tag family — name and number as model geometry — at every placed room or space,
 and keeps them up to date as the model moves.
 
-[![Revit 2020 – 2027](https://img.shields.io/badge/Revit-2020%20%E2%80%93%202027-blue.svg)](https://www.autodesk.com/products/revit/overview)
+[![Revit 2025 – 2027](https://img.shields.io/badge/Revit-2025%20%E2%80%93%202027-blue.svg)](https://www.autodesk.com/products/revit/overview)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![latest release](https://img.shields.io/github/v/release/johnpierson/3dSpatialTags?label=download)](https://github.com/johnpierson/3dSpatialTags/releases/latest)
 
@@ -30,7 +30,7 @@ and keeps them up to date as the model moves.
 | **Phase aware** | Only the rooms in the phase you pick. |
 | **Updates in place** | Re-run it and existing tags follow their room's new name, number and location, rather than piling up duplicates. |
 | **Configurable text height** | Set in feet and inches, applied to the tag family type. |
-| **Revit 2020 – 2027** | One codebase, seven versions, across .NET Framework 4.8, .NET 8 and .NET 10. |
+| **Revit 2025 – 2027** | One codebase, three versions, across .NET 8 and .NET 10. |
 
 ## Install
 
@@ -85,7 +85,6 @@ never installed it.
 ### Built with
 
 - C# (latest language version)
-- .NET Framework 4.8 — Revit 2020 – 2024
 - .NET 8 — Revit 2025 – 2026
 - .NET 10 — Revit 2027
 - WPF / MVVM, with [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet)
@@ -94,7 +93,6 @@ never installed it.
 
 ### Prerequisites
 
-- [.NET Framework 4.8 developer pack](https://dotnet.microsoft.com/download/dotnet-framework/net48)
 - [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 - [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
 

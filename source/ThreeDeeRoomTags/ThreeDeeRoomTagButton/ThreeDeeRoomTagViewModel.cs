@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
+using Serilog;
 using ThreeDeeRoomTags.Classes;
 
 namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
@@ -72,6 +73,44 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             get => _targetIndex;
             set { _targetIndex = value; OnPropertyChanged(nameof(TargetIndex)); }
         }
+
+        /// <summary>
+        /// Records which target the user chose, and everything that follows from it.
+        ///
+        /// Rooms and spaces are different elements in different categories, so whatever was
+        /// collected for the old target says nothing about the new one and is dropped. The
+        /// view used to do all of this itself — write the setting, derive the title, clear the
+        /// collection — which left two owners for one piece of state and the title updating
+        /// only if the user went through that particular handler.
+        /// </summary>
+        public void ChangeTarget(int index)
+        {
+            if (index < 0) return;
+
+            TargetIndex = index;
+            TitleText = TitleFor(index);
+
+            Properties.Settings.Default.TargetIndex = index;
+            Properties.Settings.Default.Save();
+
+            ClearCollectedElements();
+        }
+
+        /// <summary>
+        /// Records the chosen tag family type so the next document opens on it. -1 is "nothing
+        /// chosen", not a position worth remembering.
+        /// </summary>
+        public void ChangeFamilySymbol(int index)
+        {
+            if (index < 0) return;
+
+            FamilySymbolIndex = index;
+
+            Properties.Settings.Default.FamilySymbolIndex = index;
+            Properties.Settings.Default.Save();
+        }
+
+        private static string TitleFor(int targetIndex) => targetIndex == 0 ? "3d Room Tags" : "3d Space Tags";
         private bool _updateExisting;
         public bool UpdateExisting
         {
@@ -206,7 +245,7 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             TextHeightString = Properties.Settings.Default.TextHeight;
 
             TargetIndex = Properties.Settings.Default.TargetIndex;
-            TitleText = TargetIndex == 0 ? "3d Room Tags" : "3d Space Tags";
+            TitleText = TitleFor(TargetIndex);
             UpdateExisting = true;
             InProgress = false;
             FromLink = false;
@@ -254,6 +293,18 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             LinkIndex = -1;
         }
 
+        /// <summary>
+        /// Whether this element would actually get a tag.
+        ///
+        /// The same two conditions the planner applies — a point location, and something to
+        /// write in the tag. Kept here rather than duplicated in words so the count the dialog
+        /// shows and the count the run produces cannot drift apart.
+        /// </summary>
+        private static bool IsTaggable(SpatialElement element) =>
+            element.Location is LocationPoint
+            && !string.IsNullOrWhiteSpace(element.get_Parameter(BuiltInParameter.ROOM_NAME)?.AsString())
+            && !string.IsNullOrWhiteSpace(element.get_Parameter(BuiltInParameter.ROOM_NUMBER)?.AsString());
+
         public void RefreshRooms(Phase phase)
         {
             if (phase is null)
@@ -275,24 +326,48 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
                 : Model.CollectSpatialElements(phase, link, TargetIndex);
 
             string spatialElementType = TargetIndex == 0 ? "rooms" : "spaces";
-            FlyOutText = $"{SpatialElements.Count} taggable {spatialElementType} found in the selected phase.";
+
+            // Counted with the same rules the run itself uses, rather than counting everything
+            // collected. The two used to disagree: this said "N taggable rooms" about a list
+            // that included unplaced and blank-named ones the run would silently skip, so the
+            // number before a run and the number after it were different and neither was wrong
+            // about anything the user could see.
+            int taggable = SpatialElements.Count(IsTaggable);
+
+            FlyOutText = $"{taggable} taggable {spatialElementType} found in the selected phase.";
             FlyOutVisibility = true;
             ErrorText = string.Empty;
 
-            int unbounded = SpatialElements.Count(s => s.Area <= 0);
+            int untaggable = SpatialElements.Count - taggable;
+            int unbounded = SpatialElements.Count(s => s.Area <= 0 && IsTaggable(s));
 
             // Cleared rather than left standing: this used to return early when a phase had no
             // unbounded elements, so a warning from a previous phase stayed on screen describing
             // a count that no longer existed.
-            if (unbounded == 0)
+            if (untaggable == 0 && unbounded == 0)
             {
                 UnboundedFlyOutText = string.Empty;
                 UnboundedFlyOutVisibility = false;
                 return;
             }
 
-            UnboundedFlyOutText =
-                $"Warning: {unbounded} {spatialElementType} are unbounded, redundant or unplaced. Those cannot be tagged, but tags will still be created for the placed ones.";
+            var warnings = new List<string>();
+
+            if (untaggable > 0)
+            {
+                warnings.Add($"{untaggable} {spatialElementType} are unplaced or have no name or number, so they cannot be tagged.");
+            }
+
+            // Said accurately. This used to claim unbounded and redundant elements "cannot be
+            // tagged", which is not what happens: they are placed, they carry the name and
+            // number Revit gave them, and they get tags like anything else. What is worth
+            // saying is that the tag lands at a point in a room with no boundary.
+            if (unbounded > 0)
+            {
+                warnings.Add($"{unbounded} {spatialElementType} are unbounded or redundant. They will still be tagged, at their placement point.");
+            }
+
+            UnboundedFlyOutText = "Warning: " + string.Join(" ", warnings);
             UnboundedFlyOutVisibility = true;
         }
 
@@ -357,9 +432,17 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
             {
                 var link = FromLink ? SelectedLink : null;
 
-                ApplyTextHeight(spatialElementTag);
+                TextHeight = ParseTextHeight(TextHeightString);
 
-                var result = Model.CreateRoomTags(spatialElementTag, SpatialElements, UpdateExisting, link);
+                // Remembered for next time only when it is a height this tool could read.
+                // Saving an unreadable one would hand the same error back on every launch.
+                if (TextHeight > 0)
+                {
+                    Properties.Settings.Default.TextHeight = TextHeightString;
+                    Properties.Settings.Default.Save();
+                }
+
+                var result = Model.RunTagging(spatialElementTag, SpatialElements, UpdateExisting, link, TextHeight);
 
                 if (result.MissingParameter != null)
                 {
@@ -368,69 +451,48 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
                     return;
                 }
 
-                FlyOutText = $"{result.Tags.Count} tags created or updated.";
+                var summary = $"{result.Tags.Count} tags created or updated.";
+
+                if (result.MigratedLegacyTags > 0)
+                {
+                    summary += $" {result.MigratedLegacyTags} of them were tags from an earlier version, "
+                               + "now recorded against the link they came from.";
+                }
+
+                FlyOutText = summary;
                 FlyOutVisibility = true;
 
-                ErrorText = result.SkippedNotEditable > 0
-                    ? $"{result.SkippedNotEditable} existing tags are owned by another user or out of date, so they were left alone."
-                    : string.Empty;
+                // Both are worth saying, and a run can produce both at once, so neither is
+                // allowed to hide the other.
+                var notes = new List<string>();
+
+                if (result.SkippedNotEditable > 0)
+                {
+                    notes.Add($"{result.SkippedNotEditable} existing tags are owned by another user or out of date, so they were left alone.");
+                }
+
+                if (result.OrphanedTags > 0)
+                {
+                    notes.Add($"{result.OrphanedTags} tags are for elements that no longer exist. They still say what they said, "
+                              + "so they are now wrong; delete them yourself if you no longer want them.");
+                }
+
+                ErrorText = string.Join(" ", notes);
             }
             catch (Exception ex)
             {
                 // A Revit API failure here used to escape into Revit's own error dialog with a
-                // stack trace. The user can act on a sentence; they cannot act on that.
+                // stack trace. The user can act on a sentence; they cannot act on that — and
+                // the stack trace, which is what a maintainer needs, goes to the log.
+                Log.Error(ex, "Tagging run failed. Target {TargetIndex}, from link {FromLink}, {Count} elements",
+                    TargetIndex, FromLink, SpatialElements?.Count ?? 0);
+
                 ErrorText = $"Tags could not be created: {ex.Message}";
                 FlyOutVisibility = false;
             }
             finally
             {
                 InProgress = false;
-            }
-        }
-
-        /// <summary>
-        /// Pushes the requested text height onto the tag family type, if one was asked for and the
-        /// family can take it. A family without the parameter is not a failure worth stopping the
-        /// run over — the tags are still correct, they are just the size the family already was.
-        /// </summary>
-        private void ApplyTextHeight(FamilySymbol famSymb)
-        {
-            TextHeight = ParseTextHeight(TextHeightString);
-
-            if (TextHeight <= 0)
-            {
-                return;
-            }
-
-            Properties.Settings.Default.TextHeight = TextHeightString;
-            Properties.Settings.Default.Save();
-
-            var param = famSymb.LookupParameter("Text Height");
-
-            if (param is null || param.IsReadOnly || param.StorageType != StorageType.Double)
-            {
-                return;
-            }
-
-            double feet = TextHeight / 12;
-
-            if (Math.Abs(param.AsDouble() - feet) < 1e-9)
-            {
-                return;
-            }
-
-            using (Transaction t = new Transaction(Model.Doc, "Setting Tag Height"))
-            {
-                t.Start();
-                try
-                {
-                    param.Set(feet);
-                    t.Commit();
-                }
-                catch (Exception)
-                {
-                    t.RollBack();
-                }
             }
         }
 

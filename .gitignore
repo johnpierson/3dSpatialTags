@@ -19,3 +19,15 @@
 
 #User-specific files
 *.user
+
+#Revit's own backups and journals. Saving any fixture under _testFiles or revit/ leaves
+#numbered copies beside it, and .rvt files do not delta-compress -- each one committed is a
+#full extra copy in history forever.
+*.[0-9][0-9][0-9][0-9].rvt
+*.[0-9][0-9][0-9][0-9].rfa
+*.[0-9][0-9][0-9][0-9].rte
+*Backup/
+journal.*.txt
+
+#Build output that was once committed here by mistake
+_Release/
