@@ -1,0 +1,23 @@
+<Project>
+
+    <!--
+        The product version, in one place.
+
+        It used to live only in build/Build.Configuration.cs, which the NUKE build passes to
+        dotnet build as /p:Version. That works for a release and for nothing else: a plain
+        `dotnet build` stamps no version at all, so the assembly reported 1.0.0.0 and the dialog
+        title said "v.1.0.0.0" — wrong in every build a developer actually runs, and wrong in
+        the screenshot of any bug report made from one.
+
+        Setting it here means every build agrees. The NUKE build still passes /p:Version, which
+        overrides this with the same value.
+
+        Note that build/Build.Configuration.cs still declares the version separately, so the two
+        have to be bumped together. Making that file read this one would remove the last place
+        they can drift.
+    -->
+    <PropertyGroup>
+        <Version>2.0.0</Version>
+    </PropertyGroup>
+
+</Project>

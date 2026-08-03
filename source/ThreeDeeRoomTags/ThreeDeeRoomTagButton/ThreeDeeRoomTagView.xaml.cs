@@ -1,6 +1,12 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using ThreeDeeRoomTags.Utilities;
+
+// Autodesk.Revit.DB is a global using here and has a Color of its own.
+using Color = System.Windows.Media.Color;
+using Colors = System.Windows.Media.Colors;
+using SolidColorBrush = System.Windows.Media.SolidColorBrush;
 
 
 // The User Control item template is documented at https://go.microsoft.com/fwlink/?LinkId=234236
@@ -12,7 +18,24 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
         public ThreeDeeRoomTagView()
         {
             this.InitializeComponent();
+
+            // The title bar is Windows' own, tinted to the same ground the dialog is drawn on,
+            // so the window reads as one surface rather than a cream form wearing a white hat.
+            // The colours are read out of the theme rather than written here, or the two drift
+            // the first time the palette is touched.
+            WindowChromeUtils.ApplyCaptionColors(
+                this,
+                ThemeColor("Interlude.Background", Colors.White),
+                ThemeColor("Interlude.Foreground", Colors.Black),
+                ThemeColor("Interlude.Border", Colors.Black));
         }
+
+        /// <summary>
+        /// A colour from the merged Interlude dictionary, or <paramref name="fallback"/> if the
+        /// key is missing or is not a solid colour brush.
+        /// </summary>
+        private Color ThemeColor(string key, Color fallback) =>
+            this.TryFindResource(key) is SolidColorBrush brush ? brush.Color : fallback;
 
         /// <summary>
         /// The view model, or null while the window is being built.
