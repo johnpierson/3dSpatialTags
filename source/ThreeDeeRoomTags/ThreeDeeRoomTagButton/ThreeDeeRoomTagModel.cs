@@ -186,16 +186,26 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
 
         public bool LoadFamily()
         {
-            // Extracted to a uniquely named file, always, rather than preferring an .rfa found
-            // beside the assembly. Nothing installs one there, so any file at that path came
-            // from somewhere else — and for a MultiUser install "there" is under ProgramData,
-            // where any user on the machine can drop one and have every other user's Revit
-            // silently load it in preference to the family that shipped.
+            // Extracted to a uniquely named DIRECTORY, with the file inside it keeping the
+            // family's own name. Revit names a loaded family after the file it came from, so
+            // putting the unique part in the filename produced families called
+            // "3dSpatialElementTag.4622231a00da48d386fdcf38185da90b" — a new one on every load,
+            // piling up in the model and filling the family drop-down with noise.
+            //
+            // The uniqueness is still worth having. It is not preferring an .rfa found beside
+            // the assembly that matters most — nothing installs one there, so any file at that
+            // path came from somewhere else, and for a MultiUser install "there" is under
+            // ProgramData where any user on the machine could drop one — but a fixed temp path
+            // is also a file another process can be sitting on when this one needs it.
+            string familyDirectory;
             string familyPath;
 
             try
             {
-                familyPath = Path.Combine(Global.TempPath, $"{TagFamilyName}.{Guid.NewGuid():N}.rfa");
+                familyDirectory = Path.Combine(Global.TempPath, "3dSpatialTags", Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(familyDirectory);
+
+                familyPath = Path.Combine(familyDirectory, $"{TagFamilyName}.rfa");
 
                 using (var stream = Global.ExecutingAssembly.GetManifestResourceStream(TagFamilyResource))
                 {
@@ -238,11 +248,11 @@ namespace ThreeDeeRoomTags.ThreeDeeRoomTagButton
                 // to a fixed name and left behind on every run.
                 try
                 {
-                    File.Delete(familyPath);
+                    Directory.Delete(familyDirectory, true);
                 }
                 catch (Exception ex)
                 {
-                    Log.Debug(ex, "Could not remove the extracted tag family {Path}", familyPath);
+                    Log.Debug(ex, "Could not remove the extracted tag family {Path}", familyDirectory);
                 }
             }
 
